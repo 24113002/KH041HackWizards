@@ -1,0 +1,14 @@
+{
+  "sampling_rate": 100,
+  "window_size_samples": 400,
+  "saturation_threshold_max": 262140,
+  "saturation_threshold_min": 1000,
+  "bandpass_low_hz": 0.5,
+  "bandpass_high_hz": 5.0,
+  "filter_order": 4,
+  "quality_thresholds": {
+    "min_valid_samples_pct": 0.85,
+    "min_snr_db": 6.0,
+    "min_peak_prominence": 0.05
+  }
+}

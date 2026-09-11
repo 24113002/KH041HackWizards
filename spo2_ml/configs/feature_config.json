@@ -1,0 +1,37 @@
+{
+  "feature_categories": [
+    "statistical",
+    "ac_dc",
+    "r_ratio",
+    "morphology",
+    "frequency_domain",
+    "signal_quality"
+  ],
+  "selected_features": [
+    "mean_red",
+    "mean_ir",
+    "std_red",
+    "std_ir",
+    "rms_red",
+    "rms_ir",
+    "ac_red",
+    "dc_red",
+    "ac_dc_red",
+    "ac_ir",
+    "dc_ir",
+    "ac_dc_ir",
+    "r_ratio_mean",
+    "r_ratio_std",
+    "red_ir_ratio",
+    "red_ir_correlation",
+    "pulse_rate_bpm",
+    "pulse_amplitude_mean",
+    "pulse_interval_mean",
+    "pulse_interval_std",
+    "spectral_centroid_hz",
+    "spectral_energy",
+    "spectral_entropy",
+    "signal_quality_score",
+    "saturation_pct"
+  ]
+}

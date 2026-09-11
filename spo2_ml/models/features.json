@@ -1,0 +1,28 @@
+{
+  "feature_names": [
+    "ppg_mean",
+    "ppg_std",
+    "ppg_median",
+    "ppg_min",
+    "ppg_max",
+    "ppg_ptp",
+    "ppg_rms",
+    "ppg_variance",
+    "ppg_skewness",
+    "ppg_kurtosis",
+    "ppg_iqr",
+    "ppg_pulse_count",
+    "ppg_pulse_rate_bpm",
+    "ppg_pulse_interval_mean",
+    "ppg_pulse_interval_std",
+    "ppg_pulse_amplitude_mean",
+    "ppg_pulse_amplitude_std",
+    "ppg_dominant_freq_hz",
+    "ppg_spectral_centroid_hz",
+    "ppg_spectral_energy",
+    "ppg_spectral_entropy",
+    "ppg_ac_approx",
+    "ppg_dc_approx"
+  ],
+  "count": 23
+}

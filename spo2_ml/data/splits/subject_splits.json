@@ -1,0 +1,23 @@
+{
+  "train_subjects": [
+    "N_05_m",
+    "P_01_f",
+    "P_02_f",
+    "P_03_m"
+  ],
+  "val_subjects": [
+    "P_04_m"
+  ],
+  "test_subjects": [
+    "N-06_m",
+    "P_04_m"
+  ],
+  "all_subjects": [
+    "N-06_m",
+    "N_05_m",
+    "P_01_f",
+    "P_02_f",
+    "P_03_m",
+    "P_04_m"
+  ]
+}
