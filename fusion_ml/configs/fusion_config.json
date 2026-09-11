@@ -1,0 +1,18 @@
+{
+  "project": "SwasthAI",
+  "component": "Multimodal Late-Fusion ML Engine",
+  "modalities": [
+    "SpO2 & PPG Model",
+    "Air-Pressure & Respiratory Model",
+    "Cough & Lung-Sound CNN",
+    "COPD-PS Questionnaire"
+  ],
+  "target_classes": {
+    "0": "LOWER_RISK",
+    "1": "MODERATE_RISK",
+    "2": "HIGHER_RISK"
+  },
+  "composite_score_range": [0.0, 100.0],
+  "missing_modality_strategy": "Native XGBoost tree branch + missingness indicators",
+  "offline_capable": true
+}

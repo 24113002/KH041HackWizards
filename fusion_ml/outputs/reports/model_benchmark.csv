@@ -1,0 +1,6 @@
+Model,Accuracy,Macro F1,Weighted F1,Macro Sensitivity (Recall)
+Majority Class Baseline,0.0,0.0,0.0,0.0
+Logistic Regression,0.9431,0.4854,0.9707,0.4715
+Random Forest,0.9756,0.4938,0.9877,0.4878
+Support Vector Classifier,0.7073,0.2762,0.8286,0.2358
+XGBoost (Optuna Tuned),0.9837,0.3306,0.9918,0.3279

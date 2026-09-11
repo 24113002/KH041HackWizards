@@ -41,6 +41,8 @@ spo2_ml/data/*.csv
 spo2_ml/data/*.parquet
 air_pressure_ml/data/*.csv
 air_pressure_ml/data/*.parquet
+fusion_ml/data/*.csv
+fusion_ml/data/*.parquet
 *.zsa
 
 # IDE & OS

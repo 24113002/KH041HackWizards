@@ -5,12 +5,12 @@ Tests baseline calculation, filtering, segmentation, feature extraction, signal 
 
 import unittest
 import numpy as np
-from ..src.preprocessing.baseline import BaselineEstimator
-from ..src.preprocessing.filtering import RespiratoryFilter
-from ..src.preprocessing.signal_quality import PressureSignalQualityChecker
-from ..src.preprocessing.segmentation import RespiratoryBlowSegmenter
-from ..src.features.respiratory_features import RespiratoryFeatureExtractor
-from ..src.inference.inference import AirPressurePredictor
+from air_pressure_ml.src.preprocessing.baseline import BaselineEstimator
+from air_pressure_ml.src.preprocessing.filtering import RespiratoryFilter
+from air_pressure_ml.src.preprocessing.signal_quality import PressureSignalQualityChecker
+from air_pressure_ml.src.preprocessing.segmentation import RespiratoryBlowSegmenter
+from air_pressure_ml.src.features.respiratory_features import RespiratoryFeatureExtractor
+from air_pressure_ml.src.inference.inference import AirPressurePredictor
 
 class TestAirPressurePipeline(unittest.TestCase):
     def setUp(self):

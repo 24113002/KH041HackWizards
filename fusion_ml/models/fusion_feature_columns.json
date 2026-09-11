@@ -1,0 +1,44 @@
+{
+  "feature_names": [
+    "spo2_value",
+    "spo2_r_ratio",
+    "spo2_heart_rate",
+    "spo2_pathology_prob",
+    "spo2_risk_score",
+    "spo2_quality_score",
+    "spo2_is_missing",
+    "pressure_peak_cmh2o",
+    "pressure_peak_delta",
+    "pressure_blow_duration",
+    "pressure_risk_score",
+    "pressure_quality_score",
+    "pressure_is_missing",
+    "sound_abnormal_prob",
+    "sound_risk_score",
+    "sound_confidence",
+    "sound_is_missing",
+    "questionnaire_score",
+    "questionnaire_risk_score",
+    "patient_age",
+    "smoking_pack_years",
+    "biomass_exposure",
+    "breathlessness",
+    "chronic_cough",
+    "phlegm",
+    "wheezing",
+    "questionnaire_is_missing",
+    "valid_modalities_count",
+    "screening_completeness_ratio"
+  ],
+  "class_labels": {
+    "0": "LOWER_RISK",
+    "1": "MODERATE_RISK",
+    "2": "HIGHER_RISK"
+  },
+  "modalities": [
+    "spo2",
+    "pressure",
+    "sound",
+    "quest"
+  ]
+}

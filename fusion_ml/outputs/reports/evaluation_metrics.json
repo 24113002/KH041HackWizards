@@ -1,0 +1,56 @@
+{
+  "accuracy": 0.9837,
+  "macro_f1": 0.3306,
+  "test_subjects_count": 10,
+  "test_samples_count": 123,
+  "confusion_matrix": [
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      1,
+      1,
+      121
+    ]
+  ],
+  "classification_report": {
+    "Lower Risk": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 0.0
+    },
+    "Moderate Risk": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 0.0
+    },
+    "Higher Risk": {
+      "precision": 1.0,
+      "recall": 0.983739837398374,
+      "f1-score": 0.9918032786885246,
+      "support": 123.0
+    },
+    "accuracy": 0.983739837398374,
+    "macro avg": {
+      "precision": 0.3333333333333333,
+      "recall": 0.32791327913279134,
+      "f1-score": 0.33060109289617484,
+      "support": 123.0
+    },
+    "weighted avg": {
+      "precision": 1.0,
+      "recall": 0.983739837398374,
+      "f1-score": 0.9918032786885246,
+      "support": 123.0
+    }
+  }
+}

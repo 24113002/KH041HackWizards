@@ -1,0 +1,9 @@
+Modality Combination,Features Used,Accuracy,Macro F1,Sensitivity (Recall)
+A: Questionnaire Only,10,0.9837,0.4959,0.4919
+B: Questionnaire + SpO2,17,0.9837,0.4959,0.4919
+C: Questionnaire + Pressure,16,0.9837,0.4959,0.4919
+D: Questionnaire + Sound,14,0.9837,0.4959,0.4919
+E: Questionnaire + SpO2 + Pressure,23,0.9837,0.4959,0.4919
+F: Questionnaire + SpO2 + Sound,21,0.9837,0.3306,0.3279
+G: Questionnaire + Pressure + Sound,20,0.9837,0.3306,0.3279
+H: Full Multimodal Fusion (All 4),29,0.9837,0.3306,0.3279
