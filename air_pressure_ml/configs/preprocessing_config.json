@@ -1,0 +1,24 @@
+{
+  "sampling_rate_hz": 100.0,
+  "filter": {
+    "type": "butterworth_lowpass",
+    "cutoff_hz": 5.0,
+    "order": 3,
+    "median_kernel": 5
+  },
+  "baseline": {
+    "rest_window_sec": 0.5,
+    "min_samples": 50,
+    "delta_formula": "raw - baseline_mean"
+  },
+  "segmentation": {
+    "onset_threshold_pct": 0.10,
+    "min_prominence": 50.0,
+    "min_distance_sec": 1.0
+  },
+  "quality": {
+    "saturation_max_adc": 8388500.0,
+    "min_variance": 1.0,
+    "min_duration_sec": 0.5
+  }
+}

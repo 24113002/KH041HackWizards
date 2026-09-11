@@ -1,0 +1,33 @@
+{
+  "feature_count": 22,
+  "feature_names": [
+    "baseline_mean",
+    "baseline_std",
+    "baseline_drift",
+    "baseline_stability",
+    "peak_delta",
+    "mean_delta",
+    "median_delta",
+    "std_delta",
+    "rms_delta",
+    "range_delta",
+    "rise_time_sec",
+    "fall_time_sec",
+    "blow_duration_sec",
+    "time_to_peak_sec",
+    "time_above_50_pct_sec",
+    "max_rise_rate",
+    "max_fall_rate",
+    "mean_rise_rate",
+    "derivative_std",
+    "auc_total",
+    "auc_above_baseline",
+    "skewness",
+    "kurtosis",
+    "rise_to_fall_ratio",
+    "dom_freq_hz",
+    "spec_centroid_hz",
+    "spec_entropy",
+    "signal_quality_score"
+  ]
+}

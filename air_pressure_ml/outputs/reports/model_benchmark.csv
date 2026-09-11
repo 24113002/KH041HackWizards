@@ -1,0 +1,7 @@
+Model,MAE [cmH2O],RMSE [cmH2O],R²,Pearson r
+Linear Regression,0.9097,1.1649,0.9885,0.9945
+Ridge Regression,0.8989,1.1261,0.9892,0.9949
+Support Vector Regressor,5.6262,7.7999,0.4822,0.7564
+Random Forest,0.9283,1.2533,0.9866,0.994
+XGBoost (Default),1.1115,1.5698,0.979,0.9909
+XGBoost (Optuna Tuned),0.8734,1.257,0.9866,0.9937

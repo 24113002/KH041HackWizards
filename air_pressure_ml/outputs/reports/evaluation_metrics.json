@@ -1,0 +1,9 @@
+{
+  "mae_cmh2o": 0.8734,
+  "rmse_cmh2o": 1.257,
+  "r2_score": 0.9866,
+  "pearson_r": 0.9937,
+  "spearman_rho": 0.9887,
+  "test_subjects_count": 4,
+  "test_samples_count": 48
+}

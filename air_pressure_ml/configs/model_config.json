@@ -1,0 +1,13 @@
+{
+  "project": "SwasthAI",
+  "component": "Air-Pressure & Respiratory ML",
+  "model_type": "XGBRegressor",
+  "primary_target": "ref_peak_p_cmh2o",
+  "target_unit": "cmH2O",
+  "validation_strategy": "GroupKFold (grouped by subject_id)",
+  "holdout_test_subjects": [17, 18, 19, 20],
+  "training_subjects_count": 16,
+  "test_subjects_count": 4,
+  "offline_capable": true,
+  "hardware_compatibility": "ESP32 + HX710B + MPS20N0040D"
+}
