@@ -6,9 +6,9 @@ from app.models.screening import ScreeningSession
 from app.models.sensor_reading import SensorReading
 from app.models.questionnaire import QuestionnaireResponse
 from app.models.risk_result import RiskResult
-from app.schemas.screening import ScreeningCreate, ScreeningUpdate
+from app.schemas.screening import ScreeningCreate, ScreeningUpdate, CompleteScreeningResponse
 from app.schemas.sensor import SensorReadingCreate
-from app.schemas.questionnaire import QuestionnaireCreate
+from app.schemas.questionnaire import QuestionnaireCreate, QuestionnaireUpdate
 from app.schemas.risk_result import RiskResultCreate
 from app.repositories.screening_repository import screening_repository
 from app.repositories.patient_repository import patient_repository
@@ -51,14 +51,20 @@ class ScreeningService:
 
     def get_complete_screening(
         self, db: Session, screening_id: int
-    ) -> ScreeningSession:
+    ) -> CompleteScreeningResponse:
         screening = screening_repository.get_complete_screening(db, screening_id)
         if not screening:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Screening session with ID {screening_id} not found",
             )
-        return screening
+        return CompleteScreeningResponse(
+            patient=screening.patient,
+            screening=screening,
+            sensor_readings=screening.sensor_readings,
+            questionnaire=screening.questionnaire_response,
+            risk_result=screening.risk_result,
+        )
 
     def get_all_screenings(
         self, db: Session, skip: int = 0, limit: int = 100
@@ -80,6 +86,12 @@ class ScreeningService:
         self, db: Session, screening_id: int
     ) -> ScreeningSession:
         screening = self.get_screening(db, screening_id)
+
+        # Validate status transition
+        if screening.status == "completed":
+            logger.info("Screening session ID %d is already completed", screening_id)
+            return screening
+
         updated = screening_repository.complete(db, screening.id)
         logger.info("Screening session ID %d marked as completed", screening_id)
         return updated
@@ -106,18 +118,50 @@ class ScreeningService:
 
     def get_latest_sensor_reading(
         self, db: Session, screening_id: int
-    ) -> Optional[SensorReading]:
+    ) -> SensorReading:
         self.get_screening(db, screening_id)
-        return sensor_repository.get_latest(db, screening_id)
+        latest = sensor_repository.get_latest(db, screening_id)
+        if not latest:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No sensor readings recorded for screening ID {screening_id}",
+            )
+        return latest
 
     def submit_questionnaire(
-        self, db: Session, screening_id: int, questionnaire_in: QuestionnaireCreate
+        self,
+        db: Session,
+        screening_id: int,
+        questionnaire_in: QuestionnaireCreate,
+        prevent_duplicate_error: bool = False,
     ) -> QuestionnaireResponse:
         self.get_screening(db, screening_id)
+        existing = questionnaire_repository.get_by_screening(db, screening_id)
+        if existing and prevent_duplicate_error:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Questionnaire response already exists for screening ID {screening_id}",
+            )
         logger.info("Submitting questionnaire for screening ID: %d", screening_id)
         return questionnaire_repository.create_or_update(
             db, screening_id, questionnaire_in
         )
+
+    def update_questionnaire(
+        self,
+        db: Session,
+        screening_id: int,
+        questionnaire_in: QuestionnaireUpdate,
+    ) -> QuestionnaireResponse:
+        self.get_screening(db, screening_id)
+        existing = questionnaire_repository.get_by_screening(db, screening_id)
+        if not existing:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Questionnaire response not found for screening ID {screening_id}",
+            )
+        logger.info("Updating questionnaire for screening ID: %d", screening_id)
+        return questionnaire_repository.update(db, screening_id, questionnaire_in)
 
     def get_questionnaire(
         self, db: Session, screening_id: int
@@ -131,18 +175,24 @@ class ScreeningService:
             )
         return questionnaire
 
+    def get_risk_result(
+        self, db: Session, screening_id: int
+    ) -> RiskResult:
+        self.get_screening(db, screening_id)
+        result = risk_result_repository.get_by_screening(db, screening_id)
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Risk assessment result not found for screening ID {screening_id}",
+            )
+        return result
+
     def save_risk_result(
         self, db: Session, screening_id: int, result_in: RiskResultCreate
     ) -> RiskResult:
         self.get_screening(db, screening_id)
         logger.info("Saving risk screening result for screening ID: %d", screening_id)
         return risk_result_repository.create_or_update(db, screening_id, result_in)
-
-    def get_risk_result(
-        self, db: Session, screening_id: int
-    ) -> Optional[RiskResult]:
-        self.get_screening(db, screening_id)
-        return risk_result_repository.get_by_screening(db, screening_id)
 
 
 screening_service = ScreeningService()

@@ -10,9 +10,10 @@ class SensorReadingRepository:
         self, db: Session, screening_id: int, reading_in: SensorReadingCreate
     ) -> SensorReading:
         """Create and persist a single sensor reading."""
+        ts = reading_in.timestamp or datetime.now(timezone.utc)
         db_reading = SensorReading(
             screening_id=screening_id,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=ts,
             spo2=reading_in.spo2,
             heart_rate=reading_in.heart_rate,
             pressure=reading_in.pressure,
@@ -29,9 +30,10 @@ class SensorReadingRepository:
         """Batch insert multiple continuous sensor readings."""
         created_objects = []
         for r in readings_in:
+            ts = r.timestamp or datetime.now(timezone.utc)
             db_reading = SensorReading(
                 screening_id=screening_id,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=ts,
                 spo2=r.spo2,
                 heart_rate=r.heart_rate,
                 pressure=r.pressure,

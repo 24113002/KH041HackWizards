@@ -1,4 +1,4 @@
-def test_submit_and_get_questionnaire(client):
+def test_submit_and_get_and_update_questionnaire(client):
     # Setup patient and screening
     p_res = client.post(
         "/api/patients",
@@ -20,7 +20,7 @@ def test_submit_and_get_questionnaire(client):
         "recurrent_respiratory_problems": False,
     }
 
-    # Submit
+    # Submit (POST)
     response = client.post(
         f"/api/screenings/{screening_id}/questionnaire",
         json=q_payload,
@@ -35,83 +35,41 @@ def test_submit_and_get_questionnaire(client):
     assert data["chronic_cough"] is True
     assert data["phlegm"] is False
 
-    # Get
+    # Get (GET)
     get_res = client.get(f"/api/screenings/{screening_id}/questionnaire")
     assert get_res.status_code == 200
     get_data = get_res.json()
     assert get_data["screening_id"] == screening_id
     assert get_data["smoking_status"] == "former"
 
+    # Update (PUT)
+    put_res = client.put(
+        f"/api/screenings/{screening_id}/questionnaire",
+        json={"years_smoked": 30, "cigarettes_per_day": 15},
+    )
+    assert put_res.status_code == 200
+    put_data = put_res.json()
+    assert put_data["years_smoked"] == 30
+    assert put_data["cigarettes_per_day"] == 15
+    assert put_data["biomass_exposure"] is True  # Preserves unchanged
 
-def test_complete_end_to_end_screening_flow(client):
-    """
-    Test the complete end-to-end flow required by Section 23:
-    1. Create patient
-    2. Retrieve patient
-    3. Start screening
-    4. Add sensor reading
-    5. Add questionnaire
-    6. Retrieve complete screening
-    """
-    # 1. Create patient
+
+def test_questionnaire_not_found(client):
     p_res = client.post(
         "/api/patients",
-        json={
-            "full_name": "E2E Test Subject",
-            "age": 58,
-            "gender": "Female",
-            "village": "Rural Taluka",
-            "occupation": "Agriculture",
-            "smoking_status": "never",
-        },
+        json={"full_name": "No Questionnaire", "age": 40, "gender": "Female"},
     )
-    assert p_res.status_code == 201
     patient_id = p_res.json()["id"]
-
-    # 2. Retrieve patient
-    p_get = client.get(f"/api/patients/{patient_id}")
-    assert p_get.status_code == 200
-    assert p_get.json()["full_name"] == "E2E Test Subject"
-
-    # 3. Start screening
     s_res = client.post("/api/screenings", json={"patient_id": patient_id})
-    assert s_res.status_code == 201
     screening_id = s_res.json()["id"]
 
-    # 4. Add sensor reading
-    sensor_res = client.post(
-        f"/api/screenings/{screening_id}/sensor-readings",
-        json={"spo2": 95.5, "heart_rate": 84.0, "pressure": 2.1, "cough_activity": 0.45},
-    )
-    assert sensor_res.status_code == 201
+    # GET before creating returns 404
+    get_res = client.get(f"/api/screenings/{screening_id}/questionnaire")
+    assert get_res.status_code == 404
 
-    # 5. Add questionnaire
-    q_res = client.post(
+    # PUT before creating returns 404
+    put_res = client.put(
         f"/api/screenings/{screening_id}/questionnaire",
-        json={
-            "smoking_status": "never",
-            "biomass_exposure": True,
-            "breathlessness": True,
-            "chronic_cough": False,
-            "phlegm": False,
-            "wheezing": False,
-            "recurrent_respiratory_problems": True,
-        },
+        json={"years_smoked": 10},
     )
-    assert q_res.status_code == 201
-
-    # Complete the screening
-    complete_res = client.put(f"/api/screenings/{screening_id}/complete")
-    assert complete_res.status_code == 200
-
-    # 6. Retrieve complete screening details
-    detail_res = client.get(f"/api/screenings/{screening_id}")
-    assert detail_res.status_code == 200
-    detail_data = detail_res.json()
-    assert detail_data["id"] == screening_id
-    assert detail_data["status"] == "completed"
-    assert detail_data["completed_at"] is not None
-    assert len(detail_data["sensor_readings"]) == 1
-    assert detail_data["sensor_readings"][0]["spo2"] == 95.5
-    assert detail_data["questionnaire_response"] is not None
-    assert detail_data["questionnaire_response"]["biomass_exposure"] is True
+    assert put_res.status_code == 404

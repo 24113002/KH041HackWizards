@@ -15,7 +15,7 @@ def test_add_sensor_reading(client):
         "cough_activity": 0.72,
     }
     response = client.post(
-        f"/api/screenings/{screening_id}/sensor-readings",
+        f"/api/screenings/{screening_id}/sensor-data",
         json=reading_payload,
     )
     assert response.status_code == 201
@@ -29,6 +29,37 @@ def test_add_sensor_reading(client):
     assert "timestamp" in data
 
 
+def test_bulk_sensor_data_and_latest(client):
+    p_res = client.post(
+        "/api/patients",
+        json={"full_name": "Bulk Sensor Patient", "age": 52, "gender": "Male"},
+    )
+    patient_id = p_res.json()["id"]
+    s_res = client.post("/api/screenings", json={"patient_id": patient_id})
+    screening_id = s_res.json()["id"]
+
+    bulk_payload = {
+        "readings": [
+            {"spo2": 96.0, "heart_rate": 78.0, "pressure": 0.42, "cough_activity": 0.10},
+            {"spo2": 95.5, "heart_rate": 80.0, "pressure": 0.45, "cough_activity": 0.25},
+        ]
+    }
+    bulk_res = client.post(
+        f"/api/screenings/{screening_id}/sensor-data/bulk",
+        json=bulk_payload,
+    )
+    assert bulk_res.status_code == 201
+    data = bulk_res.json()
+    assert len(data) == 2
+
+    # Get latest reading
+    latest_res = client.get(f"/api/screenings/{screening_id}/sensor-data/latest")
+    assert latest_res.status_code == 200
+    latest_data = latest_res.json()
+    assert latest_data["spo2"] == 95.5
+    assert latest_data["heart_rate"] == 80.0
+
+
 def test_get_sensor_readings(client):
     p_res = client.post(
         "/api/patients",
@@ -40,15 +71,15 @@ def test_get_sensor_readings(client):
 
     # Add two readings
     client.post(
-        f"/api/screenings/{screening_id}/sensor-readings",
+        f"/api/screenings/{screening_id}/sensor-data",
         json={"spo2": 98.0, "heart_rate": 75.0},
     )
     client.post(
-        f"/api/screenings/{screening_id}/sensor-readings",
+        f"/api/screenings/{screening_id}/sensor-data",
         json={"spo2": 96.0, "heart_rate": 78.0},
     )
 
-    response = client.get(f"/api/screenings/{screening_id}/sensor-readings")
+    response = client.get(f"/api/screenings/{screening_id}/sensor-data")
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 2
@@ -56,7 +87,7 @@ def test_get_sensor_readings(client):
 
 def test_add_sensor_reading_nonexistent_screening(client):
     response = client.post(
-        "/api/screenings/99999/sensor-readings",
+        "/api/screenings/99999/sensor-data",
         json={"spo2": 98.0, "heart_rate": 75.0},
     )
     assert response.status_code == 404

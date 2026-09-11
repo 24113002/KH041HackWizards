@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.schemas.questionnaire import (
     QuestionnaireCreate,
+    QuestionnaireUpdate,
     QuestionnaireResponseSchema,
 )
 from app.services.screening_service import screening_service
@@ -14,7 +15,7 @@ router = APIRouter(prefix="/screenings", tags=["Questionnaire"])
     "/{screening_id}/questionnaire",
     response_model=QuestionnaireResponseSchema,
     status_code=status.HTTP_201_CREATED,
-    summary="Submit or update questionnaire responses for a screening session",
+    summary="Submit clinical questionnaire responses for a screening session",
 )
 def submit_questionnaire(
     screening_id: int,
@@ -34,3 +35,16 @@ def get_questionnaire(
     db: Session = Depends(get_db),
 ):
     return screening_service.get_questionnaire(db, screening_id)
+
+
+@router.put(
+    "/{screening_id}/questionnaire",
+    response_model=QuestionnaireResponseSchema,
+    summary="Update existing questionnaire responses for a screening session",
+)
+def update_questionnaire(
+    screening_id: int,
+    questionnaire_in: QuestionnaireUpdate,
+    db: Session = Depends(get_db),
+):
+    return screening_service.update_questionnaire(db, screening_id, questionnaire_in)

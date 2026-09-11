@@ -6,7 +6,9 @@ from app.schemas.screening import (
     ScreeningCreate,
     ScreeningResponse,
     ScreeningDetailResponse,
+    CompleteScreeningResponse,
 )
+from app.schemas.risk_result import RiskResultResponse
 from app.services.screening_service import screening_service
 
 router = APIRouter(prefix="/screenings", tags=["Screenings"])
@@ -41,7 +43,7 @@ def get_screenings(
 @router.get(
     "/{screening_id}",
     response_model=ScreeningDetailResponse,
-    summary="Get full screening details including sensor readings and questionnaire",
+    summary="Get screening details by ID",
 )
 def get_screening(
     screening_id: int,
@@ -50,13 +52,49 @@ def get_screening(
     return screening_service.get_screening(db, screening_id)
 
 
-@router.put(
+@router.post(
     "/{screening_id}/complete",
     response_model=ScreeningResponse,
-    summary="Mark a screening session as completed",
+    summary="Mark screening session as completed (POST)",
 )
-def complete_screening(
+def complete_screening_post(
     screening_id: int,
     db: Session = Depends(get_db),
 ):
     return screening_service.complete_screening(db, screening_id)
+
+
+@router.put(
+    "/{screening_id}/complete",
+    response_model=ScreeningResponse,
+    summary="Mark screening session as completed (PUT)",
+)
+def complete_screening_put(
+    screening_id: int,
+    db: Session = Depends(get_db),
+):
+    return screening_service.complete_screening(db, screening_id)
+
+
+@router.get(
+    "/{screening_id}/complete",
+    response_model=CompleteScreeningResponse,
+    summary="Retrieve complete screening aggregation (patient, screening, sensor readings, questionnaire, risk result)",
+)
+def get_complete_screening(
+    screening_id: int,
+    db: Session = Depends(get_db),
+):
+    return screening_service.get_complete_screening(db, screening_id)
+
+
+@router.get(
+    "/{screening_id}/risk-result",
+    response_model=RiskResultResponse,
+    summary="Retrieve risk assessment result for a screening session",
+)
+def get_screening_risk_result(
+    screening_id: int,
+    db: Session = Depends(get_db),
+):
+    return screening_service.get_risk_result(db, screening_id)

@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, ConfigDict, Field
+from app.schemas.patient import PatientResponse
 from app.schemas.sensor import SensorReadingResponse
 from app.schemas.questionnaire import QuestionnaireResponseSchema
 from app.schemas.risk_result import RiskResultResponse
@@ -38,3 +39,17 @@ class ScreeningDetailResponse(ScreeningResponse):
     risk_result: Optional[RiskResultResponse] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class CompleteScreeningResponse(BaseModel):
+    patient: Optional[PatientResponse] = None
+    screening: ScreeningResponse
+    sensor_readings: List[SensorReadingResponse] = []
+    questionnaire: Optional[QuestionnaireResponseSchema] = None
+    risk_result: Optional[RiskResultResponse] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# Alias
+ScreeningCompleteResponse = CompleteScreeningResponse

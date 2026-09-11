@@ -19,9 +19,25 @@ class QuestionnaireCreate(QuestionnaireBase):
     pass
 
 
+class QuestionnaireUpdate(BaseModel):
+    smoking_status: Optional[str] = Field(None, max_length=50)
+    years_smoked: Optional[int] = Field(None, ge=0, le=100)
+    cigarettes_per_day: Optional[int] = Field(None, ge=0, le=200)
+    biomass_exposure: Optional[bool] = None
+    breathlessness: Optional[bool] = None
+    chronic_cough: Optional[bool] = None
+    phlegm: Optional[bool] = None
+    wheezing: Optional[bool] = None
+    recurrent_respiratory_problems: Optional[bool] = None
+
+
 class QuestionnaireResponseSchema(QuestionnaireBase):
     id: int
     screening_id: int
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# Alias for compatibility
+QuestionnaireResponse = QuestionnaireResponseSchema
