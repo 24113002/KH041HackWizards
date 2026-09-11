@@ -84,14 +84,15 @@ class SignalQualityChecker:
                 'rejection_reason': 'Flatline signal / zero variance'
             }
 
-        # 4. Signal-to-Noise Ratio (Pulsatile Band 0.5 - 4.0 Hz vs High-Frequency Noise)
+        # 4. Signal-to-Noise Ratio (Pulsatile Band 0.5 - 4.0 Hz vs High-Frequency / Motion Noise)
         try:
+            sig_ac = signal - np.mean(signal)
             sos_band = scipy.signal.butter(4, [0.5, 4.0], btype='bandpass', fs=sr, output='sos')
-            pulsatile = scipy.signal.sosfiltfilt(sos_band, signal)
-            noise = signal - pulsatile
+            pulsatile = scipy.signal.sosfiltfilt(sos_band, sig_ac)
+            residual_noise = sig_ac - pulsatile
             
             p_signal = np.mean(pulsatile ** 2)
-            p_noise = np.mean(noise ** 2) + 1e-9
+            p_noise = np.mean(residual_noise ** 2) + 1e-9
             snr_db = float(10.0 * np.log10(p_signal / p_noise))
         except Exception:
             snr_db = 0.0
