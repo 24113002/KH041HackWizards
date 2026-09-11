@@ -8,7 +8,9 @@ import 'sensor_data_model.dart';
 enum ScreeningStatus {
   inProgress,
   completed,
+  incomplete,
   cancelled,
+  failed,
 }
 
 extension ScreeningStatusExtension on ScreeningStatus {
@@ -18,8 +20,12 @@ extension ScreeningStatusExtension on ScreeningStatus {
         return 'In Progress';
       case ScreeningStatus.completed:
         return 'Completed';
+      case ScreeningStatus.incomplete:
+        return 'Incomplete';
       case ScreeningStatus.cancelled:
         return 'Cancelled';
+      case ScreeningStatus.failed:
+        return 'Failed / Error';
     }
   }
 }

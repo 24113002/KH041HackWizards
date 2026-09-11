@@ -235,6 +235,27 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
             else
               ..._patientScreenings.map((s) {
                 final r = s.riskResult;
+                final category = s.riskCategory ?? r.riskCategory;
+                final isInc = s.status == ScreeningStatus.incomplete || category.toLowerCase().contains('incomplete');
+                
+                Color color = AppTheme.riskLow;
+                final lower = category.toLowerCase();
+                if (isInc) {
+                  color = AppTheme.riskModerate;
+                } else if (lower.contains('high') || lower.contains('critical')) {
+                  color = AppTheme.riskHigh;
+                } else if (lower.contains('moderate')) {
+                  color = AppTheme.riskModerate;
+                }
+
+                final scoreDisplay = isInc ? '--' : '${s.riskScore ?? r.riskScore} / 100';
+                final spo2Display = s.vitals.spo2 > 0 ? '${s.vitals.spo2}%' : '--';
+                final airflowDisplay = s.sensorReading?.pressure != null
+                    ? '${(s.sensorReading!.pressure! * 10000).toInt()}'
+                    : '--';
+                final coughDisplay = s.sensorReading?.coughActivity != null
+                    ? '${(s.sensorReading!.coughActivity! * 2000).toInt()}'
+                    : (s.acoustic.coughCount > 0 ? '${s.acoustic.coughCount}' : '--');
                 final dateFormatted = DateFormat('dd MMM yyyy, HH:mm').format(s.startedAt);
 
                 return Card(
@@ -244,15 +265,39 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                     title: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(r.riskCategory, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textLight, fontSize: 14)),
-                        Text('Score: ${r.riskScore}/100', style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryTeal, fontSize: 12)),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: color.withAlpha(35),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: color.withAlpha(90)),
+                          ),
+                          child: Text(
+                            isInc ? 'INCOMPLETE' : category.toUpperCase(),
+                            style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 11),
+                          ),
+                        ),
+                        Text(
+                          'Score: $scoreDisplay',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 12),
+                        ),
                       ],
                     ),
                     subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        'SpO2: ${s.vitals.spo2}% • FEV1/FVC: ${(s.spirometry.fev1FvcRatio * 100).toStringAsFixed(0)}% • $dateFormatted',
-                        style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'SpO₂: $spo2Display • Airflow: $airflowDisplay • Cough: $coughDisplay',
+                            style: const TextStyle(fontSize: 11, color: AppTheme.textLight, fontWeight: FontWeight.w500),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            dateFormatted,
+                            style: const TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                          ),
+                        ],
                       ),
                     ),
                     trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: AppTheme.textMuted),
@@ -264,7 +309,7 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
                             session: s.copyWith(patient: _patient),
                           ),
                         ),
-                      );
+                      ).then((_) => _loadPatientHistory());
                     },
                   ),
                 );

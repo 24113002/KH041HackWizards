@@ -2,6 +2,11 @@ import 'package:flutter/foundation.dart';
 import '../models/screening_session_model.dart';
 import '../repositories/screening_repository.dart';
 
+enum ScreeningSortOrder {
+  newestFirst,
+  oldestFirst,
+}
+
 class ScreeningHistoryController extends ChangeNotifier {
   final ScreeningRepository repository;
 
@@ -20,6 +25,9 @@ class ScreeningHistoryController extends ChangeNotifier {
   String _searchQuery = '';
   String get searchQuery => _searchQuery;
 
+  ScreeningSortOrder _sortOrder = ScreeningSortOrder.newestFirst;
+  ScreeningSortOrder get sortOrder => _sortOrder;
+
   ScreeningHistoryController({required this.repository}) {
     loadHistory();
   }
@@ -30,9 +38,9 @@ class ScreeningHistoryController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _history = await repository.getScreenings();
-      // Sort newest first
-      _history.sort((a, b) => b.startedAt.compareTo(a.startedAt));
+      final results = await repository.getScreenings();
+      _history = List<ScreeningSession>.from(results);
+      _applySorting();
     } catch (e) {
       _error = 'Unable to load screening records. Please try again.';
       debugPrint('Error loading screening history: $e');
@@ -42,7 +50,7 @@ class ScreeningHistoryController extends ChangeNotifier {
     }
   }
 
-  void filterByCategory(String category) {
+  void setFilterCategory(String category) {
     _filterCategory = category;
     notifyListeners();
   }
@@ -52,16 +60,84 @@ class ScreeningHistoryController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setSortOrder(ScreeningSortOrder order) {
+    _sortOrder = order;
+    _applySorting();
+    notifyListeners();
+  }
+
+  void toggleSortOrder() {
+    _sortOrder = _sortOrder == ScreeningSortOrder.newestFirst
+        ? ScreeningSortOrder.oldestFirst
+        : ScreeningSortOrder.newestFirst;
+    _applySorting();
+    notifyListeners();
+  }
+
+  void clearFilters() {
+    _filterCategory = 'All';
+    _searchQuery = '';
+    _sortOrder = ScreeningSortOrder.newestFirst;
+    _applySorting();
+    notifyListeners();
+  }
+
+  void _applySorting() {
+    if (_sortOrder == ScreeningSortOrder.newestFirst) {
+      _history.sort((a, b) => b.startedAt.compareTo(a.startedAt));
+    } else {
+      _history.sort((a, b) => a.startedAt.compareTo(b.startedAt));
+    }
+  }
+
   List<ScreeningSession> get filteredHistory {
     return _history.where((session) {
-      final patientName = session.patient?.fullName.toLowerCase() ?? session.patient?.name.toLowerCase() ?? '';
-      final matchesSearch = patientName.contains(_searchQuery.toLowerCase());
-      if (!matchesSearch) return false;
+      // 1. Search Matching (Patient Name, Village, or Screening ID)
+      if (_searchQuery.trim().isNotEmpty) {
+        final query = _searchQuery.trim().toLowerCase();
+        final patientName = session.patient?.fullName.toLowerCase() ?? session.patient?.name.toLowerCase() ?? '';
+        final village = session.patient?.village.toLowerCase() ?? '';
+        final screeningId = session.id.toLowerCase();
+        final recordId = session.sensorReading?.id.toLowerCase() ?? '';
 
+        final matchesSearch = patientName.contains(query) ||
+            village.contains(query) ||
+            screeningId.contains(query) ||
+            recordId.contains(query);
+
+        if (!matchesSearch) return false;
+      }
+
+      // 2. Filter Category Matching
       if (_filterCategory == 'All') return true;
-      final cat = session.riskCategory?.toLowerCase() ?? session.riskResult.riskCategory.toLowerCase();
-      return cat.contains(_filterCategory.toLowerCase());
+
+      final category = (session.riskCategory ?? session.riskResult.riskCategory).toLowerCase();
+      final status = session.status.name.toLowerCase();
+
+      if (_filterCategory == 'Completed') {
+        return session.status == ScreeningStatus.completed;
+      }
+      if (_filterCategory == 'Incomplete') {
+        return session.status == ScreeningStatus.incomplete ||
+            session.status == ScreeningStatus.cancelled ||
+            category.contains('incomplete');
+      }
+      if (_filterCategory == 'Higher Risk' || _filterCategory == 'High') {
+        return category.contains('high') || category.contains('critical');
+      }
+      if (_filterCategory == 'Moderate Risk' || _filterCategory == 'Moderate') {
+        return category.contains('moderate');
+      }
+      if (_filterCategory == 'Lower Risk' || _filterCategory == 'Low') {
+        return category.contains('low') && !category.contains('incomplete');
+      }
+
+      return category.contains(_filterCategory.toLowerCase()) || status.contains(_filterCategory.toLowerCase());
     }).toList();
+  }
+
+  List<ScreeningSession> getScreeningsForPatient(String patientId) {
+    return _history.where((s) => s.patientId == patientId).toList();
   }
 
   Future<ScreeningSession?> getScreeningDetails(String id) async {

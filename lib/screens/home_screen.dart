@@ -355,7 +355,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           const SizedBox(height: 3),
                           Text(
-                            'SpO2: ${s.vitals.spo2}% • HR: ${s.vitals.heartRate} bpm • ${DateFormat('dd MMM, HH:mm').format(s.startedAt)}',
+                            'SpO₂: ${s.vitals.spo2 > 0 ? '${s.vitals.spo2}%' : '--'} • Airflow: ${s.sensorReading?.pressure != null ? '${(s.sensorReading!.pressure! * 10000).toInt()}' : '--'} • ${DateFormat('dd MMM, HH:mm').format(s.startedAt)}',
                             style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
                           ),
                         ],
