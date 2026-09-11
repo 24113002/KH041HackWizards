@@ -36,6 +36,7 @@ ENV/
 # Large Datasets
 dataset-lung sounds/
 Spo2 dataset/
+airpressure-dataset/
 spo2_ml/data/*.csv
 spo2_ml/data/*.parquet
 *.zsa
