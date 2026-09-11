@@ -77,6 +77,21 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
+@app.get("/", summary="Root API Information", tags=["General"])
+def root():
+    """Welcome endpoint providing service info and documentation links."""
+    return {
+        "service": settings.PROJECT_NAME,
+        "version": settings.VERSION,
+        "mode": settings.MODE,
+        "status": "online",
+        "docs": "/docs",
+        "redoc": "/redoc",
+        "health": "/health",
+        "api_prefix": settings.API_V1_STR,
+    }
+
+
 # Health Endpoint (mounted at root and available at /health)
 app.include_router(health_router)
 
