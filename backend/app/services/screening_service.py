@@ -5,13 +5,16 @@ from sqlalchemy.orm import Session
 from app.models.screening import ScreeningSession
 from app.models.sensor_reading import SensorReading
 from app.models.questionnaire import QuestionnaireResponse
+from app.models.risk_result import RiskResult
 from app.schemas.screening import ScreeningCreate, ScreeningUpdate
 from app.schemas.sensor import SensorReadingCreate
 from app.schemas.questionnaire import QuestionnaireCreate
+from app.schemas.risk_result import RiskResultCreate
 from app.repositories.screening_repository import screening_repository
 from app.repositories.patient_repository import patient_repository
 from app.repositories.sensor_repository import sensor_repository
 from app.repositories.questionnaire_repository import questionnaire_repository
+from app.repositories.risk_repository import risk_result_repository
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +43,17 @@ class ScreeningService:
         screening = screening_repository.get_by_id(db, screening_id)
         if not screening:
             logger.warning("Screening session not found with ID: %d", screening_id)
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Screening session with ID {screening_id} not found",
+            )
+        return screening
+
+    def get_complete_screening(
+        self, db: Session, screening_id: int
+    ) -> ScreeningSession:
+        screening = screening_repository.get_complete_screening(db, screening_id)
+        if not screening:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Screening session with ID {screening_id} not found",
@@ -77,11 +91,24 @@ class ScreeningService:
         logger.info("Adding sensor reading for screening ID: %d", screening_id)
         return sensor_repository.create(db, screening_id, reading_in)
 
+    def add_multiple_sensor_readings(
+        self, db: Session, screening_id: int, readings_in: List[SensorReadingCreate]
+    ) -> List[SensorReading]:
+        self.get_screening(db, screening_id)
+        logger.info("Adding %d sensor readings for screening ID: %d", len(readings_in), screening_id)
+        return sensor_repository.create_many(db, screening_id, readings_in)
+
     def get_sensor_readings(
         self, db: Session, screening_id: int
     ) -> List[SensorReading]:
         self.get_screening(db, screening_id)
         return sensor_repository.get_by_screening_id(db, screening_id)
+
+    def get_latest_sensor_reading(
+        self, db: Session, screening_id: int
+    ) -> Optional[SensorReading]:
+        self.get_screening(db, screening_id)
+        return sensor_repository.get_latest(db, screening_id)
 
     def submit_questionnaire(
         self, db: Session, screening_id: int, questionnaire_in: QuestionnaireCreate
@@ -103,6 +130,19 @@ class ScreeningService:
                 detail=f"Questionnaire response not found for screening ID {screening_id}",
             )
         return questionnaire
+
+    def save_risk_result(
+        self, db: Session, screening_id: int, result_in: RiskResultCreate
+    ) -> RiskResult:
+        self.get_screening(db, screening_id)
+        logger.info("Saving risk screening result for screening ID: %d", screening_id)
+        return risk_result_repository.create_or_update(db, screening_id, result_in)
+
+    def get_risk_result(
+        self, db: Session, screening_id: int
+    ) -> Optional[RiskResult]:
+        self.get_screening(db, screening_id)
+        return risk_result_repository.get_by_screening(db, screening_id)
 
 
 screening_service = ScreeningService()

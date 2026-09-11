@@ -13,9 +13,9 @@ class ScreeningSession(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     patient_id = Column(Integer, ForeignKey("patients.id", ondelete="CASCADE"), nullable=False, index=True)
-    started_at = Column(DateTime, default=utc_now, nullable=False)
+    started_at = Column(DateTime, default=utc_now, nullable=False, index=True)
     completed_at = Column(DateTime, nullable=True)
-    status = Column(String(30), default="in_progress", nullable=False)  # in_progress, completed, cancelled
+    status = Column(String(30), default="in_progress", nullable=False, index=True)  # in_progress, completed, cancelled
     risk_score = Column(Float, nullable=True)
     risk_category = Column(String(50), nullable=True)
 

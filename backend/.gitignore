@@ -18,8 +18,7 @@ ENV/
 .env
 
 # SQLite local databases & logs
-data/*.db
-data/*.sqlite
-data/*.sqlite3
+data/*.db*
+data/*.sqlite*
 !data/.gitkeep
 *.log

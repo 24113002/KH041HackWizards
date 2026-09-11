@@ -13,7 +13,7 @@ class SensorReading(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     screening_id = Column(Integer, ForeignKey("screening_sessions.id", ondelete="CASCADE"), nullable=False, index=True)
-    timestamp = Column(DateTime, default=utc_now, nullable=False)
+    timestamp = Column(DateTime, default=utc_now, nullable=False, index=True)
     spo2 = Column(Float, nullable=True)
     heart_rate = Column(Float, nullable=True)
     pressure = Column(Float, nullable=True)

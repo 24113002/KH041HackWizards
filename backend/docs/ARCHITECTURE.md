@@ -1,0 +1,203 @@
+# SwasthAI Architecture & Data Layer Design (Phase B2)
+
+> **Offline COPD Risk Screening for Rural Healthcare**  
+> *Notice: SwasthAI is a screening-support system, NOT a diagnostic medical device.*
+
+---
+
+## 1. High-Level Data Flow
+
+```text
+       Flutter Client (Mobile / Offline)
+                     │
+                     │ HTTP / JSON API
+                     ▼
+          FastAPI Layer (app/api/routes)
+                     │
+                     │ Pydantic Schemas / Validation
+                     ▼
+         Service Layer (app/services)
+                     │
+                     │ Business Logic & Orchestration
+                     ▼
+       Repository Layer (app/repositories)
+                     │
+                     │ Clean Data Access & Queries
+                     ▼
+        SQLAlchemy ORM (app/models)
+                     │
+                     │ WAL Mode + Foreign Keys (PRAGMA foreign_keys=ON)
+                     ▼
+       SQLite Database (data/swasthai.db)
+```
+
+---
+
+## 2. SQLite Database Configuration
+
+- **Location**: `backend/data/swasthai.db` (created automatically on startup)
+- **Engine Configuration**:
+  - `check_same_thread=False` for thread safety in async FastAPI requests.
+  - Automatic `PRAGMA foreign_keys=ON` per SQLite connection to enforce referential integrity.
+  - Automatic `PRAGMA journal_mode=WAL` (Write-Ahead Logging) for optimized concurrency and local reliability.
+- **Offline Guarantee**: Fully embedded, local storage with 0% cloud/internet dependency.
+
+---
+
+## 3. SQLAlchemy Models & Schema
+
+### 1. `Patient` (`patients`)
+Represents an individual receiving rural healthcare screening.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | Integer | Primary Key, Auto-increment | Unique patient ID |
+| `full_name` | String(100) | Indexed, Not Null | Full name |
+| `age` | Integer | Not Null | Age in years |
+| `gender` | String(20) | Not Null | Gender |
+| `village` | String(100) | Nullable | Village / locality |
+| `occupation` | String(100) | Nullable | Primary occupation |
+| `smoking_status` | String(50) | Nullable | never / former / current |
+| `created_at` | DateTime | Indexed, Default UTC | Registration timestamp |
+| `updated_at` | DateTime | Default/OnUpdate UTC | Last profile update |
+
+---
+
+### 2. `ScreeningSession` (`screening_sessions`)
+Represents a distinct point-in-time screening evaluation session for a patient.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | Integer | Primary Key, Auto-increment | Unique session ID |
+| `patient_id` | Integer | ForeignKey(`patients.id`), Indexed | Patient reference |
+| `started_at` | DateTime | Indexed, Default UTC | Session initiation timestamp |
+| `completed_at` | DateTime | Nullable | Session conclusion timestamp |
+| `status` | String(30) | Indexed, Default `in_progress` | `in_progress`, `completed`, `cancelled` |
+| `risk_score` | Float | Nullable | Estimated score (0-100) |
+| `risk_category` | String(50) | Nullable | Low / Moderate / Higher Risk |
+
+---
+
+### 3. `SensorReading` (`sensor_readings`)
+Time-series physiological measurements from pulse oximetry, exhalation pressure, and cough acoustic sensors.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | Integer | Primary Key, Auto-increment | Reading ID |
+| `screening_id` | Integer | ForeignKey(`screening_sessions.id`), Indexed | Screening reference |
+| `timestamp` | DateTime | Indexed, Default UTC | Timestamp of sensor observation |
+| `spo2` | Float | Nullable | Blood oxygen saturation percentage |
+| `heart_rate` | Float | Nullable | Pulse rate in BPM |
+| `pressure` | Float | Nullable | Expiratory / airway pressure |
+| `cough_activity` | Float | Nullable | Acoustic cough index |
+
+---
+
+### 4. `QuestionnaireResponse` (`questionnaire_responses`)
+Standardized screening symptom questionnaire and exposure risk factors.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | Integer | Primary Key, Auto-increment | Response ID |
+| `screening_id` | Integer | ForeignKey(`screening_sessions.id`), Unique, Indexed | 1:1 relationship with screening |
+| `smoking_status` | String(50) | Nullable | Tobacco exposure |
+| `years_smoked` | Integer | Nullable | Pack years / duration |
+| `cigarettes_per_day` | Integer | Nullable | Quantity consumed |
+| `biomass_exposure` | Boolean | Default False | Chulha / wood smoke exposure |
+| `breathlessness` | Boolean | Default False | Shortness of breath |
+| `chronic_cough` | Boolean | Default False | Persistent cough |
+| `phlegm` | Boolean | Default False | Sputum production |
+| `wheezing` | Boolean | Default False | Wheeze sound during breathing |
+| `recurrent_respiratory_problems` | Boolean | Default False | History of chest illnesses |
+| `created_at` | DateTime | Default UTC | Submission timestamp |
+
+---
+
+### 5. `RiskResult` (`risk_results`)
+Structured risk calculation output generated by the screening assessment engine.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | Integer | Primary Key, Auto-increment | Result ID |
+| `screening_id` | Integer | ForeignKey(`screening_sessions.id`), Unique, Indexed | 1:1 relationship with screening |
+| `risk_score` | Float | Nullable | Calculated numerical risk (0-100) |
+| `risk_category` | String(50) | Nullable | e.g. "Low Risk", "Higher Risk" |
+| `contributing_factors` | JSON | Nullable | List of identified risk factors |
+| `recommendation` | Text | Nullable | Screening advisory / clinical recommendation |
+| `created_at` | DateTime | Default UTC | Assessment timestamp |
+
+---
+
+## 4. Entity Relationships & Cascade Guarantees
+
+```text
+┌──────────────┐ 1      * ┌────────────────────┐
+│   Patient    ├──────────┤  ScreeningSession  │
+└──────────────┘          └─────────┬──────────┘
+                                    │
+           ┌────────────────────────┼────────────────────────┐
+         1 │ *                    1 │ 1                    1 │ 1
+ ┌─────────▼────────┐     ┌─────────▼────────┐     ┌─────────▼────────┐
+ │  SensorReading   │     │  Questionnaire   │     │    RiskResult    │
+ └──────────────────┘     └──────────────────┘     └──────────────────┘
+```
+
+- **Patient → Screenings**: One-to-Many (`cascade="all, delete-orphan"`).
+- **Screening → SensorReadings**: One-to-Many (`order_by="SensorReading.timestamp.asc()"`).
+- **Screening → Questionnaire**: One-to-One (`uselist=False`, unique foreign key).
+- **Screening → RiskResult**: One-to-One (`uselist=False`, unique foreign key).
+- **Deletion Safety**: Deleting a patient safely cascades to their screenings and child readings/responses.
+
+---
+
+## 5. Repository Layer API
+
+All repository classes isolate SQL execution from HTTP request lifecycles:
+
+1. **`PatientRepository`**:
+   - `create(db, patient_in)`
+   - `get_by_id(db, patient_id)`
+   - `get_all(db, skip, limit)`
+   - `search(db, query)`
+   - `update(db, db_obj, obj_in)`
+   - `delete(db, patient_id)`
+   - `count(db)`
+   - `last_screening(db, patient_id)`
+
+2. **`ScreeningRepository`**:
+   - `create(db, screening_in)`
+   - `get_by_id(db, screening_id)`
+   - `get_all(db, skip, limit)`
+   - `get_by_patient(db, patient_id)`
+   - `update(db, db_obj, obj_in)`
+   - `complete(db, screening_id)`
+   - `count(db)`
+   - `latest(db, limit)`
+   - `get_complete_screening(db, screening_id)` *(Eager loading of all relationships)*
+
+3. **`SensorReadingRepository`**:
+   - `create(db, screening_id, reading_in)`
+   - `create_many(db, screening_id, readings_in)` *(Batch insertion)*
+   - `get_by_screening(db, screening_id)`
+   - `get_latest(db, screening_id)`
+
+4. **`QuestionnaireRepository`**:
+   - `create(db, screening_id, questionnaire_in)`
+   - `get_by_screening(db, screening_id)`
+   - `update(db, screening_id, data)`
+   - `create_or_update(db, screening_id, questionnaire_in)` *(Duplicate prevention)*
+
+5. **`RiskResultRepository`**:
+   - `create(db, screening_id, result_in)`
+   - `get_by_screening(db, screening_id)`
+   - `update(db, screening_id, data)`
+   - `create_or_update(db, screening_id, result_in)`
+
+---
+
+## 6. Service Layer Orchestration
+
+- Services coordinate transactional business workflows without embedding direct SQL queries.
+- `ScreeningService.get_complete_screening` consolidates patient demographics, time-series sensor readings, questionnaires, and risk assessment results for the mobile client.
+- `PatientService` manages patient lifecycle, input validation, and history lookups.
+- `risk_assessment_service` interface provides a pluggable evaluation boundary without medical diagnosis claims.

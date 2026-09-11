@@ -18,7 +18,7 @@ class Patient(Base):
     village = Column(String(100), nullable=True)
     occupation = Column(String(100), nullable=True)
     smoking_status = Column(String(50), nullable=True)
-    created_at = Column(DateTime, default=utc_now, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False, index=True)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
 
     # Relationships
