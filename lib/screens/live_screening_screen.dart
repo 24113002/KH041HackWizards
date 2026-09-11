@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../controllers/current_screening_controller.dart';
 import '../models/patient_model.dart';
-import '../models/sensor_data_model.dart';
+import '../models/swaas_ai_ble_result.dart';
 import '../services/ble_service.dart';
 import '../theme/app_theme.dart';
 import 'questionnaire_screen.dart';
@@ -19,152 +19,205 @@ class LiveScreeningScreen extends StatefulWidget {
 
 class _LiveScreeningScreenState extends State<LiveScreeningScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-
-  // PPG buffer for live chart (last 60 points)
-  final List<FlSpot> _ppgPoints = [];
-  double _ppgIndex = 0;
-  StreamSubscription<VitalsReading>? _vitalsSub;
-
-  // Spirometry state
-  SpirometrySummary _spirometrySummary = SpirometrySummary.empty();
-  bool _blowCompleted = false;
-
-  // Vitals Snapshot
-  VitalsReading _capturedVitals = VitalsReading.initial();
+  StreamSubscription<SwaasAiBleResult>? _resultSub;
+  bool _isReading = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
 
+    final screeningController = context.read<CurrentScreeningController>();
+    if (!screeningController.isSessionActive) {
+      screeningController.startNewSession(widget.patient);
+    }
+
     final ble = context.read<BleService>();
     ble.resetSessionCounters();
 
-    _vitalsSub = ble.vitalsStream.listen((v) {
+    // Listen for NOTIFY packets from ESP32
+    _resultSub = ble.screeningResultStream.listen((result) {
       if (mounted) {
-        setState(() {
-          _capturedVitals = v;
-          _ppgIndex += 1.0;
-          _ppgPoints.add(FlSpot(_ppgIndex, v.ppgValue));
-          if (_ppgPoints.length > 50) {
-            _ppgPoints.removeAt(0);
-          }
-        });
+        _onScreeningResultReceived(result, isNotify: true);
       }
     });
+
+    // Check if a result is already available on initial load
+    if (ble.latestScreeningResult != null && screeningController.bleResult == null) {
+      screeningController.applyBleResult(ble.latestScreeningResult!);
+    }
   }
 
   @override
   void dispose() {
-    _vitalsSub?.cancel();
+    _resultSub?.cancel();
     _tabController.dispose();
     super.dispose();
   }
 
-  void _onCompleteBlowTest() {
+  void _onScreeningResultReceived(SwaasAiBleResult result, {bool isNotify = false}) {
+    final screeningController = context.read<CurrentScreeningController>();
+    screeningController.applyBleResult(result);
+
+    if (isNotify && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              Text('New screening result received: Record ${result.id} (${result.formattedStatus})'),
+            ],
+          ),
+          backgroundColor: AppTheme.primaryTeal,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  Future<void> _manualReadResult() async {
+    if (_isReading) return;
+    setState(() => _isReading = true);
+
     final ble = context.read<BleService>();
-    final summary = ble.computeSpirometrySummary();
-    setState(() {
-      _spirometrySummary = summary;
-      _blowCompleted = true;
-    });
+    final result = await ble.readLatestResult();
+
+    if (mounted) {
+      setState(() => _isReading = false);
+      if (result != null) {
+        _onScreeningResultReceived(result, isNotify: false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Screening result read successfully: Record ${result.id}'),
+            backgroundColor: AppTheme.riskLow,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No completed result received from device yet.'),
+            backgroundColor: AppTheme.riskModerate,
+          ),
+        );
+      }
+    }
   }
 
   void _proceedToQuestionnaire() {
-    final ble = context.read<BleService>();
-    final summary = _blowCompleted ? _spirometrySummary : ble.computeSpirometrySummary();
-
-    // If no blow points were recorded, provide baseline default so screening can still proceed
-    final finalSpiro = (summary.fvc > 0.1)
-        ? summary
-        : SpirometrySummary(
-            fev1: widget.patient.predictedFev1 * 0.95,
-            fvc: widget.patient.predictedFvc * 0.95,
-            fev1FvcRatio: 0.82,
-            pefLpm: widget.patient.predictedPef * 0.92,
-            forcedExpiratoryTimeSec: 3.5,
-          );
-
-    final acousticSummary = AcousticSummary(
-      coughCount: ble.sessionCoughCount,
-      peakRms: ble.latestAcoustic.rmsAmplitude,
-      averageRms: 0.10,
-      wheezeDetected: ble.sessionCoughCount >= 3,
-    );
+    final screeningController = context.read<CurrentScreeningController>();
 
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => QuestionnaireScreen(
           patient: widget.patient,
-          vitals: _capturedVitals,
-          spirometry: finalSpiro,
-          acoustic: acousticSummary,
+          vitals: screeningController.vitals,
+          spirometry: screeningController.spirometry,
+          acoustic: screeningController.acoustic,
+          bleResult: screeningController.bleResult,
         ),
       ),
     );
   }
 
+  void _proceedToDirectResult(SwaasAiBleResult bleResult) {
+    _proceedToQuestionnaire();
+  }
+
   @override
   Widget build(BuildContext context) {
     final ble = context.watch<BleService>();
+    final screeningController = context.watch<CurrentScreeningController>();
+    final bleResult = screeningController.bleResult;
+
+    final isDisconnected = ble.connectionState == BleConnectionState.connectionLost ||
+        ble.connectionState == BleConnectionState.disconnected ||
+        ble.connectionState == BleConnectionState.error;
 
     return Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Live Sensor Screening', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+            const Text('ESP32 Screening Receiver', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
             Text(
               'Patient: ${widget.patient.name} (${widget.patient.age}y, ${widget.patient.gender.name.toUpperCase()})',
               style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: _isReading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
+                : const Icon(Icons.refresh),
+            tooltip: 'Read Latest Result from Device',
+            onPressed: isDisconnected ? null : _manualReadResult,
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppTheme.primaryTeal,
           labelColor: AppTheme.primaryTeal,
           unselectedLabelColor: AppTheme.textMuted,
           tabs: const [
-            Tab(icon: Icon(Icons.favorite_border), text: 'MAX30102 Vitals'),
-            Tab(icon: Icon(Icons.air), text: 'Airflow Spirometry'),
-            Tab(icon: Icon(Icons.graphic_eq), text: 'Mic & Acoustic'),
+            Tab(icon: Icon(Icons.assignment_turned_in), text: 'Screening Result'),
+            Tab(icon: Icon(Icons.air), text: 'Raw Airflow'),
+            Tab(icon: Icon(Icons.graphic_eq), text: 'Cough Signal'),
           ],
         ),
       ),
       body: Column(
         children: [
-          if (ble.connectionState == BleConnectionState.connectionLost ||
-              ble.connectionState == BleConnectionState.disconnected)
+          // Connection Lost / Disconnected Banner with Reconnect Action
+          if (isDisconnected)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               color: AppTheme.riskCritical.withAlpha(40),
               child: Row(
                 children: [
-                  const Icon(Icons.warning_amber_rounded, size: 18, color: AppTheme.riskCritical),
+                  const Icon(Icons.warning_amber_rounded, size: 20, color: AppTheme.riskCritical),
                   const SizedBox(width: 10),
                   const Expanded(
-                    child: Text(
-                      'Device connection lost. Live sensor data collection is paused.',
-                      style: TextStyle(color: AppTheme.textLight, fontSize: 12, fontWeight: FontWeight.w600),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Device disconnected.',
+                          style: TextStyle(color: AppTheme.textLight, fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          'Collected patient data is preserved.',
+                          style: TextStyle(color: AppTheme.textMuted, fontSize: 11),
+                        ),
+                      ],
                     ),
                   ),
-                  TextButton(
+                  ElevatedButton(
                     onPressed: () => ble.startScan(),
-                    child: const Text('Reconnect', style: TextStyle(color: AppTheme.primaryTeal, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryTeal,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    ),
+                    child: const Text('Reconnect', style: TextStyle(fontSize: 12)),
                   ),
                 ],
               ),
             ),
+
           Expanded(
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildVitalsTab(ble),
-                _buildSpirometryTab(ble),
-                _buildAcousticTab(ble),
+                _buildScreeningResultTab(ble, bleResult),
+                _buildAirflowTab(ble, bleResult),
+                _buildCoughTab(ble, bleResult),
               ],
             ),
           ),
@@ -183,25 +236,34 @@ class _LiveScreeningScreenState extends State<LiveScreeningScreen> with SingleTi
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Text('HR: ${_capturedVitals.heartRate} bpm', style: const TextStyle(color: AppTheme.textLight, fontWeight: FontWeight.w600, fontSize: 12)),
-                    const SizedBox(width: 8),
-                    Text('•  SpO2: ${_capturedVitals.spo2}%', style: const TextStyle(color: AppTheme.primaryTeal, fontWeight: FontWeight.w600, fontSize: 12)),
-                  ],
+                Text(
+                  bleResult != null
+                      ? 'Record: ${bleResult.id} • Status: ${bleResult.formattedStatus}'
+                      : 'Waiting for ESP32 screening...',
+                  style: const TextStyle(color: AppTheme.textLight, fontWeight: FontWeight.w600, fontSize: 12),
                 ),
                 Text(
-                  _blowCompleted ? 'Spirometry: FEV1/FVC ${(_spirometrySummary.fev1FvcRatio * 100).toStringAsFixed(0)}%' : 'Airflow: Ready for blow',
+                  bleResult != null
+                      ? 'Risk: ${bleResult.formattedRisk} | SpO₂: ${bleResult.formattedSpo2}'
+                      : 'BLE Service: ${ble.connectionState.label}',
                   style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
                 ),
               ],
             ),
-            ElevatedButton.icon(
-              onPressed: _proceedToQuestionnaire,
-              icon: const Icon(Icons.arrow_forward),
-              label: const Text('Clinical Questionnaire'),
-              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryTeal),
-            ),
+            if (bleResult != null)
+              ElevatedButton.icon(
+                onPressed: () => _proceedToDirectResult(bleResult),
+                icon: const Icon(Icons.arrow_forward),
+                label: const Text('Continue to Questionnaire'),
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryTeal),
+              )
+            else
+              ElevatedButton.icon(
+                onPressed: _proceedToQuestionnaire,
+                icon: const Icon(Icons.arrow_forward),
+                label: const Text('Questionnaire'),
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentIndigo),
+              ),
           ],
         ),
       ),
@@ -209,198 +271,217 @@ class _LiveScreeningScreenState extends State<LiveScreeningScreen> with SingleTi
   }
 
   // ==========================================
-  // TAB 1: MAX30102 VITALS (PPG, HR, SpO2)
+  // TAB 1: HARDWARE SCREENING RESULT & VITALS
   // ==========================================
-  Widget _buildVitalsTab(BleService ble) {
-    final hr = _capturedVitals.heartRate;
-    final spo2 = _capturedVitals.spo2;
+  Widget _buildScreeningResultTab(BleService ble, SwaasAiBleResult? result) {
+    final statusColor = result != null ? _getRiskColor(result.status) : AppTheme.textMuted;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Vital Cards Row
-          Row(
-            children: [
-              // Heart Rate Card
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceElevated,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.redAccent.withAlpha(40)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.favorite, color: Colors.redAccent, size: 20),
-                          SizedBox(width: 6),
-                          Text('Heart Rate', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          Text(
-                            '$hr',
-                            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.textLight),
+          // 1. ESP32 Screening Status Card
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceElevated,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: statusColor.withAlpha(80), width: 1.5),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          result != null ? Icons.verified : Icons.hourglass_top_rounded,
+                          color: statusColor,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          result != null ? 'SCREENING RESULT RECEIVED' : 'WAITING FOR SCREENING RESULT...',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                            color: statusColor,
                           ),
-                          const SizedBox(width: 4),
-                          const Text('bpm', style: TextStyle(fontSize: 13, color: AppTheme.textMuted)),
-                        ],
+                        ),
+                      ],
+                    ),
+                    if (result != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: statusColor.withAlpha(40),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          result.formattedStatus,
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: statusColor),
+                        ),
                       ),
-                      Text(
-                        hr >= 60 && hr <= 100 ? 'Normal Rhythm' : (hr > 100 ? 'Tachycardia' : 'Bradycardia'),
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: hr >= 60 && hr <= 100 ? AppTheme.riskLow : AppTheme.riskHigh,
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                if (result == null) ...[
+                  const Text(
+                    'Instruct the patient to perform the physical screening on the SwaasAI ESP32 hardware.',
+                    style: TextStyle(fontSize: 13, color: AppTheme.textLight),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'The ESP32 will automatically transmit the completed packet via BLE NOTIFY once the test finishes.',
+                    style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: _isReading ? null : _manualReadResult,
+                        icon: const Icon(Icons.download, size: 16),
+                        label: const Text('Read from Device'),
+                        style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryTeal),
+                      ),
+                      if (ble.isSimulatorMode) ...[
+                        const SizedBox(width: 10),
+                        OutlinedButton(
+                          onPressed: () {
+                            ble.emitMockScreeningResult(rawPacket: 'R01,42350,97,1860,42,MODERATE');
+                          },
+                          child: const Text('Simulate R01'),
+                        ),
+                      ],
+                    ],
+                  ),
+                ] else ...[
+                  // Result Grid
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildResultStat(
+                          label: 'Record ID',
+                          value: result.id,
+                          subText: 'Hardware session',
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _buildResultStat(
+                          label: 'Risk Score',
+                          value: result.formattedRisk,
+                          subText: result.risk != null ? 'Calculated score' : 'Unavailable (NA)',
+                          color: statusColor,
                         ),
                       ),
                     ],
                   ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              // SpO2 Card
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceElevated,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppTheme.primaryTeal.withAlpha(40)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(height: 10),
+                  Row(
                     children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.water_drop, color: AppTheme.primaryTeal, size: 20),
-                          SizedBox(width: 6),
-                          Text('Blood Oxygen', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                        ],
+                      Expanded(
+                        child: _buildResultStat(
+                          label: 'Blood Oxygen (SpO₂)',
+                          value: result.formattedSpo2,
+                          subText: result.spo2 != null ? 'Unit: %' : 'Unavailable (NA)',
+                          color: result.spo2 != null ? AppTheme.primaryTeal : AppTheme.textMuted,
+                        ),
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          Text(
-                            '$spo2',
-                            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.textLight),
-                          ),
-                          const SizedBox(width: 4),
-                          const Text('%', style: TextStyle(fontSize: 16, color: AppTheme.textMuted)),
-                        ],
-                      ),
-                      Text(
-                        spo2 >= 95 ? 'Adequate Saturation' : (spo2 >= 90 ? 'Mild Hypoxia' : 'Severe Hypoxia!'),
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: spo2 >= 95 ? AppTheme.riskLow : (spo2 >= 90 ? AppTheme.riskModerate : AppTheme.riskCritical),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _buildResultStat(
+                          label: 'Heart Rate',
+                          value: '--',
+                          subText: 'Not in BLE packet',
+                          color: AppTheme.textMuted,
                         ),
                       ),
                     ],
                   ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Live PPG Waveform
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  const SizedBox(height: 10),
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Icon(Icons.show_chart, color: AppTheme.primaryTeal, size: 18),
-                          SizedBox(width: 8),
-                          Text(
-                            'MAX30102 Live PPG Pulse Wave',
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textLight),
-                          ),
-                        ],
+                      Expanded(
+                        child: _buildResultStat(
+                          label: 'Raw Airflow Feature',
+                          value: result.formattedAirflow,
+                          subText: 'Raw sensor value',
+                        ),
                       ),
-                      Text('REAL-TIME', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.riskLow)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _buildResultStat(
+                          label: 'Cough Signal',
+                          value: result.formattedCough,
+                          subText: 'Digital audio feature',
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 160,
-                    child: _ppgPoints.isEmpty
-                        ? const Center(child: Text('Awaiting optical pulse signal...', style: TextStyle(color: AppTheme.textMuted)))
-                        : LineChart(
-                            LineChartData(
-                              gridData: FlGridData(
-                                show: true,
-                                drawVerticalLine: false,
-                                getDrawingHorizontalLine: (val) => FlLine(color: Colors.white.withAlpha(10), strokeWidth: 1),
-                              ),
-                              titlesData: const FlTitlesData(show: false),
-                              borderData: FlBorderData(show: false),
-                              minY: -0.1,
-                              maxY: 1.1,
-                              lineBarsData: [
-                                LineChartBarData(
-                                  spots: _ppgPoints,
-                                  isCurved: true,
-                                  curveSmoothness: 0.25,
-                                  color: AppTheme.primaryTeal,
-                                  barWidth: 2.5,
-                                  isStrokeCapRound: true,
-                                  dotData: const FlDotData(show: false),
-                                  belowBarData: BarAreaData(
-                                    show: true,
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        AppTheme.primaryTeal.withAlpha(70),
-                                        AppTheme.primaryTeal.withAlpha(0),
-                                      ],
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                    ),
-                                  ),
-                                ),
-                              ],
+
+                  if (result.isIncomplete) ...[
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.riskModerate.withAlpha(25),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppTheme.riskModerate.withAlpha(60)),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.info_outline, color: AppTheme.riskModerate, size: 18),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Screening incomplete. One or more sensor measurements were missing (NA) from the hardware.',
+                              style: TextStyle(fontSize: 12, color: AppTheme.riskModerate, fontWeight: FontWeight.w500),
                             ),
                           ),
-                  ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
-              ),
+              ],
             ),
           ),
-          const SizedBox(height: 14),
-          // Clinical Reference Box
+          const SizedBox(height: 16),
+
+          // 2. Medical Safety & Labeling Notice
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppTheme.surfaceElevated.withAlpha(70),
+              color: AppTheme.surfaceElevated.withAlpha(80),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.white.withAlpha(10)),
             ),
-            child: const Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.info_outline, color: AppTheme.primaryBlue, size: 18),
-                SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Place patient finger firmly on the MAX30102 sensor window until clear dicrotic notches appear.',
-                    style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
-                  ),
+                const Row(
+                  children: [
+                    Icon(Icons.health_and_safety_outlined, color: AppTheme.primaryTeal, size: 18),
+                    SizedBox(width: 8),
+                    Text(
+                      'Screening Parameter Guidelines',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textLight),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  '• Raw Airflow Feature: Raw sensor-derived value; not calibrated clinical airflow.\n'
+                  '• Cough Signal: Digital audio feature; not a clinically validated cough severity score.\n'
+                  '• SwasthAI is a screening-support application, NOT a diagnostic medical device.',
+                  style: TextStyle(fontSize: 11, color: AppTheme.textMuted, height: 1.4),
                 ),
               ],
             ),
@@ -410,272 +491,42 @@ class _LiveScreeningScreenState extends State<LiveScreeningScreen> with SingleTi
     );
   }
 
-  // ==========================================
-  // TAB 2: SPIROMETRY AIRFLOW BLOW TEST
-  // ==========================================
-  Widget _buildSpirometryTab(BleService ble) {
-    final isBlowing = ble.isBlowing;
-    final points = ble.currentBlowPoints;
-    final summary = _blowCompleted ? _spirometrySummary : ble.computeSpirometrySummary();
-
-    final fev1Pct = widget.patient.predictedFev1 > 0 ? (summary.fev1 / widget.patient.predictedFev1) * 100 : 0.0;
-    final fvcPct = widget.patient.predictedFvc > 0 ? (summary.fvc / widget.patient.predictedFvc) * 100 : 0.0;
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+  Widget _buildResultStat({
+    required String label,
+    required String value,
+    required String subText,
+    Color? color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceDark,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Blow Action Card
-          Card(
-            color: isBlowing ? AppTheme.primaryTeal.withAlpha(30) : AppTheme.surfaceElevated,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: isBlowing ? AppTheme.primaryTeal : AppTheme.surfaceDark,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          isBlowing ? Icons.air : Icons.sports_martial_arts,
-                          color: Colors.white,
-                          size: 26,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              isBlowing ? 'BLOW HARD & FAST NOW!' : 'Forced Expiratory Spirometry',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textLight),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              isBlowing
-                                  ? 'Exhaling into mouthpiece tube... keep pushing!'
-                                  : 'Instruct patient to inhale fully, then blast into mouthpiece.',
-                              style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  if (ble.isSimulatorMode) ...[
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: isBlowing
-                                ? null
-                                : () {
-                                    ble.startSimulatedSpirometryBlow(simulateObstruction: false);
-                                    Future.delayed(const Duration(milliseconds: 4700), _onCompleteBlowTest);
-                                  },
-                            icon: const Icon(Icons.play_arrow),
-                            label: const Text('Simulate Normal Blow'),
-                            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryTeal),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: isBlowing
-                                ? null
-                                : () {
-                                    ble.startSimulatedSpirometryBlow(simulateObstruction: true);
-                                    Future.delayed(const Duration(milliseconds: 4700), _onCompleteBlowTest);
-                                  },
-                            icon: const Icon(Icons.warning_amber),
-                            label: const Text('Simulate Obstruction'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ] else ...[
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: isBlowing ? null : () => ble.startSimulatedSpirometryBlow(),
-                        icon: const Icon(Icons.air),
-                        label: const Text('Start Airflow Recording'),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
+          Text(label, style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color ?? AppTheme.textLight,
             ),
           ),
-          const SizedBox(height: 16),
-          // Flow vs Time Graph
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Flow - Time Curve (L/s vs sec)',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textLight),
-                      ),
-                      if (summary.pefLpm > 0)
-                        Text(
-                          'PEF: ${summary.pefLpm.toStringAsFixed(0)} L/min',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryTeal),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 170,
-                    child: points.isEmpty
-                        ? const Center(
-                            child: Text(
-                              'Awaiting forced exhalation blow...',
-                              style: TextStyle(color: AppTheme.textMuted),
-                            ),
-                          )
-                        : LineChart(
-                            LineChartData(
-                              gridData: FlGridData(
-                                show: true,
-                                drawVerticalLine: true,
-                                getDrawingHorizontalLine: (val) => FlLine(color: Colors.white.withAlpha(10)),
-                                getDrawingVerticalLine: (val) => FlLine(color: Colors.white.withAlpha(10)),
-                              ),
-                              titlesData: FlTitlesData(
-                                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                bottomTitles: AxisTitles(
-                                  sideTitles: SideTitles(
-                                    showTitles: true,
-                                    reservedSize: 22,
-                                    getTitlesWidget: (v, m) => Text('${v.toStringAsFixed(1)}s', style: const TextStyle(color: AppTheme.textMuted, fontSize: 10)),
-                                  ),
-                                ),
-                                leftTitles: AxisTitles(
-                                  sideTitles: SideTitles(
-                                    showTitles: true,
-                                    reservedSize: 28,
-                                    getTitlesWidget: (v, m) => Text('${v.toInt()}L/s', style: const TextStyle(color: AppTheme.textMuted, fontSize: 10)),
-                                  ),
-                                ),
-                              ),
-                              borderData: FlBorderData(show: false),
-                              minX: 0.0,
-                              maxX: 4.5,
-                              minY: 0.0,
-                              maxY: 9.0,
-                              lineBarsData: [
-                                LineChartBarData(
-                                  spots: points.map((p) => FlSpot(p.timeSec, p.flowLps)).toList(),
-                                  isCurved: true,
-                                  color: AppTheme.primaryBlue,
-                                  barWidth: 3,
-                                  dotData: const FlDotData(show: false),
-                                  belowBarData: BarAreaData(
-                                    show: true,
-                                    color: AppTheme.primaryBlue.withAlpha(40),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 14),
-          // Calculated Metrics Grid
-          Row(
-            children: [
-              _buildMetricTile(
-                title: 'FEV1 (1-sec Volume)',
-                value: '${summary.fev1.toStringAsFixed(2)} L',
-                sub: '${fev1Pct.toStringAsFixed(0)}% of pred (${widget.patient.predictedFev1.toStringAsFixed(2)} L)',
-                isNormal: fev1Pct >= 80,
-              ),
-              const SizedBox(width: 10),
-              _buildMetricTile(
-                title: 'FVC (Total Capacity)',
-                value: '${summary.fvc.toStringAsFixed(2)} L',
-                sub: '${fvcPct.toStringAsFixed(0)}% of pred (${widget.patient.predictedFvc.toStringAsFixed(2)} L)',
-                isNormal: fvcPct >= 80,
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              _buildMetricTile(
-                title: 'FEV1 / FVC Ratio',
-                value: '${(summary.fev1FvcRatio * 100).toStringAsFixed(1)}%',
-                sub: summary.fev1FvcRatio >= 0.70 ? 'Normal (≥70%)' : 'Airflow Obstruction (<70%)',
-                isNormal: summary.fev1FvcRatio >= 0.70,
-              ),
-              const SizedBox(width: 10),
-              _buildMetricTile(
-                title: 'Peak Flow (PEF)',
-                value: '${summary.pefLpm.toStringAsFixed(0)} L/m',
-                sub: 'Pred: ${widget.patient.predictedPef.toStringAsFixed(0)} L/m',
-                isNormal: summary.pefLpm >= (widget.patient.predictedPef * 0.75),
-              ),
-            ],
-          ),
+          const SizedBox(height: 2),
+          Text(subText, style: const TextStyle(fontSize: 10, color: AppTheme.textMuted)),
         ],
       ),
     );
   }
 
-  Widget _buildMetricTile({
-    required String title,
-    required String value,
-    required String sub,
-    required bool isNormal,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceElevated,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isNormal ? Colors.white.withAlpha(15) : AppTheme.riskHigh.withAlpha(60)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
-            const SizedBox(height: 4),
-            Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textLight)),
-            const SizedBox(height: 2),
-            Text(
-              sub,
-              style: TextStyle(fontSize: 10, color: isNormal ? AppTheme.riskLow : AppTheme.riskHigh, fontWeight: FontWeight.w500),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   // ==========================================
-  // TAB 3: MIC & ACOUSTIC AUSCULTATION
+  // TAB 2: RAW AIRFLOW FEATURE
   // ==========================================
-  Widget _buildAcousticTab(BleService ble) {
-    final acoustic = ble.latestAcoustic;
-
+  Widget _buildAirflowTab(BleService ble, SwaasAiBleResult? result) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -689,71 +540,40 @@ class _LiveScreeningScreenState extends State<LiveScreeningScreen> with SingleTi
                 children: [
                   const Row(
                     children: [
-                      Icon(Icons.mic, color: AppTheme.accentIndigo),
+                      Icon(Icons.air, color: AppTheme.primaryBlue, size: 20),
                       SizedBox(width: 10),
                       Text(
-                        'Acoustic Auscultation & Cough Sensor',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textLight),
+                        'Raw Airflow Feature',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textLight),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   const Text(
-                    'Microphone analyzes acoustic energy for forced cough bursts and wheezing frequencies.',
+                    'Raw sensor-derived value; not calibrated clinical airflow.',
                     style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
                   ),
                   const SizedBox(height: 20),
-                  // Audio RMS Level Bar
-                  Row(
-                    children: [
-                      const Text('RMS Level: ', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: LinearProgressIndicator(
-                            value: acoustic.rmsAmplitude.clamp(0.0, 1.0),
-                            minHeight: 12,
-                            backgroundColor: AppTheme.surfaceElevated,
-                            color: acoustic.coughDetected ? AppTheme.riskHigh : AppTheme.accentIndigo,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        '${(acoustic.rmsAmplitude * 100).toStringAsFixed(0)}%',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textLight),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  // Cough Event Counter
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: AppTheme.surfaceElevated,
-                      borderRadius: BorderRadius.circular(12),
+                      color: AppTheme.surfaceDark,
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Column(
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Coughs Detected in Session', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${ble.sessionCoughCount}',
-                              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppTheme.textLight),
-                            ),
-                          ],
+                        const Text('Airflow Sensor Value', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                        const SizedBox(height: 6),
+                        Text(
+                          result?.formattedAirflow ?? '--',
+                          style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
                         ),
-                        if (ble.isSimulatorMode)
-                          ElevatedButton.icon(
-                            onPressed: () => ble.triggerSimulatedCough(),
-                            icon: const Icon(Icons.record_voice_over, size: 16),
-                            label: const Text('Simulate Cough'),
-                            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentIndigo),
-                          ),
+                        const SizedBox(height: 4),
+                        Text(
+                          result?.airflow != null ? 'Acquired from ESP32 differential sensor' : 'Awaiting hardware packet',
+                          style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                        ),
                       ],
                     ),
                   ),
@@ -764,5 +584,82 @@ class _LiveScreeningScreenState extends State<LiveScreeningScreen> with SingleTi
         ],
       ),
     );
+  }
+
+  // ==========================================
+  // TAB 3: COUGH SIGNAL FEATURE
+  // ==========================================
+  Widget _buildCoughTab(BleService ble, SwaasAiBleResult? result) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.graphic_eq, color: AppTheme.accentIndigo, size: 20),
+                      SizedBox(width: 10),
+                      Text(
+                        'Cough Signal',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textLight),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Digital audio feature; not a clinically validated cough severity score.',
+                    style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceDark,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text('Audio Feature Amplitude', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                        const SizedBox(height: 6),
+                        Text(
+                          result?.formattedCough ?? '--',
+                          style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: AppTheme.accentIndigo),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          result?.cough != null ? 'Digitized acoustic feature from ESP32 mic' : 'Awaiting hardware packet',
+                          style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getRiskColor(SwaasAiStatus status) {
+    switch (status) {
+      case SwaasAiStatus.low:
+        return AppTheme.riskLow;
+      case SwaasAiStatus.moderate:
+        return AppTheme.riskModerate;
+      case SwaasAiStatus.high:
+        return AppTheme.riskHigh;
+      case SwaasAiStatus.incomplete:
+      case SwaasAiStatus.unknown:
+        return AppTheme.riskModerate;
+    }
   }
 }

@@ -13,7 +13,8 @@ class BleStatusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ble = context.watch<BleService>();
     final isSim = ble.isSimulatorMode;
-    final isConnected = ble.connectionState == BleConnectionState.connected;
+    final isReadyOrConnected = ble.connectionState == BleConnectionState.ready ||
+        ble.connectionState == BleConnectionState.connected;
 
     return Card(
       color: AppTheme.surfaceElevated,
@@ -32,14 +33,14 @@ class BleStatusCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: isConnected
+                  color: isReadyOrConnected
                       ? (isSim ? AppTheme.accentIndigo.withAlpha(40) : AppTheme.riskLow.withAlpha(40))
                       : AppTheme.textMuted.withAlpha(30),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   isSim ? Icons.sensors : Icons.bluetooth,
-                  color: isConnected
+                  color: isReadyOrConnected
                       ? (isSim ? AppTheme.accentIndigo : AppTheme.riskLow)
                       : AppTheme.textMuted,
                   size: 22,
@@ -55,7 +56,7 @@ class BleStatusCard extends StatelessWidget {
                         Text(
                           isSim
                               ? 'Hardware Simulator Active'
-                              : (isConnected ? 'ESP32 Connected' : 'Device Disconnected'),
+                              : (isReadyOrConnected ? 'SwaasAI ESP32 Ready' : 'Device Disconnected'),
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
@@ -68,7 +69,7 @@ class BleStatusCard extends StatelessWidget {
                           height: 8,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: isConnected ? AppTheme.riskLow : Colors.grey,
+                            color: isReadyOrConnected ? AppTheme.riskLow : Colors.grey,
                           ),
                         ),
                       ],
@@ -76,8 +77,8 @@ class BleStatusCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       isSim
-                          ? 'Streaming realistic MAX30102 & Airflow data'
-                          : (ble.connectedDeviceName ?? 'Tap to manage & pair your ESP32'),
+                          ? 'Simulating SwaasAI ESP32 hardware packets'
+                          : (ble.connectedDeviceName ?? 'Tap to manage & pair your SwaasAI ESP32'),
                       style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -130,7 +131,7 @@ class BleStatusCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (isConnected)
+                  if (isReadyOrConnected)
                     const PopupMenuItem(
                       value: 'disconnect',
                       child: Row(

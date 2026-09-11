@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -6,14 +7,64 @@ import '../config/ble_config.dart';
 import '../models/ble_device_model.dart';
 import '../models/sensor_data_model.dart';
 import '../models/sensor_reading_model.dart';
+import '../models/swaas_ai_ble_result.dart';
 import 'sensor_data_parser.dart';
+import 'swaas_ai_packet_parser.dart';
 
 enum BleConnectionState {
   disconnected,
   scanning,
   connecting,
   connected,
+  discoveringServices,
+  ready,
+  receivingResult,
   connectionLost,
+  error,
+}
+
+extension BleConnectionStateExtension on BleConnectionState {
+  String get label {
+    switch (this) {
+      case BleConnectionState.disconnected:
+        return 'Disconnected';
+      case BleConnectionState.scanning:
+        return 'Scanning';
+      case BleConnectionState.connecting:
+        return 'Connecting...';
+      case BleConnectionState.connected:
+        return 'Connected';
+      case BleConnectionState.discoveringServices:
+        return 'Discovering Services...';
+      case BleConnectionState.ready:
+        return 'Ready';
+      case BleConnectionState.receivingResult:
+        return 'Receiving Result...';
+      case BleConnectionState.connectionLost:
+        return 'Connection Lost';
+      case BleConnectionState.error:
+        return 'Connection Error';
+    }
+  }
+
+  String get iconEmoji {
+    switch (this) {
+      case BleConnectionState.disconnected:
+        return '🔴';
+      case BleConnectionState.scanning:
+      case BleConnectionState.connecting:
+      case BleConnectionState.discoveringServices:
+        return '🟡';
+      case BleConnectionState.connected:
+      case BleConnectionState.ready:
+        return '🟢';
+      case BleConnectionState.receivingResult:
+        return '🔵';
+      case BleConnectionState.connectionLost:
+      case BleConnectionState.error:
+        return '🔴';
+    }
+  }
 }
 
 /// Abstract BLE Service contract required for hardware-to-mobile sensor acquisition.
@@ -24,6 +75,11 @@ abstract class BleService extends ChangeNotifier {
   Stream<VitalsReading> get vitalsStream;
   Stream<SpirometryPoint> get spirometryStream;
   Stream<AcousticReading> get acousticStream;
+  Stream<SwaasAiBleResult> get screeningResultStream;
+
+  SwaasAiBleResult? get latestScreeningResult;
+  String? get lastRawPacket;
+  DateTime? get lastPacketTime;
 
   VitalsReading get latestVitals;
   AcousticReading get latestAcoustic;
@@ -39,6 +95,8 @@ abstract class BleService extends ChangeNotifier {
   Future<void> stopScan();
   Future<void> connectToDevice(dynamic device);
   Future<void> disconnect();
+  Future<SwaasAiBleResult?> readLatestResult();
+  void emitMockScreeningResult({String? rawPacket});
   void toggleSimulatorMode(bool enable);
   void resetSessionCounters();
   SpirometrySummary computeSpirometrySummary();
@@ -65,9 +123,23 @@ class RealBleService extends ChangeNotifier implements BleService {
   String? get errorMessage => _errorMessage;
 
   BluetoothDevice? _connectedDevice;
+  BluetoothCharacteristic? _screeningResultCharacteristic;
+
   final List<BleDeviceModel> _discoveredDevices = [];
   @override
   List<BleDeviceModel> get discoveredDevices => List.unmodifiable(_discoveredDevices);
+
+  SwaasAiBleResult? _latestScreeningResult;
+  @override
+  SwaasAiBleResult? get latestScreeningResult => _latestScreeningResult;
+
+  String? _lastRawPacket;
+  @override
+  String? get lastRawPacket => _lastRawPacket;
+
+  DateTime? _lastPacketTime;
+  @override
+  DateTime? get lastPacketTime => _lastPacketTime;
 
   VitalsReading _latestVitals = VitalsReading.initial();
   @override
@@ -96,6 +168,10 @@ class RealBleService extends ChangeNotifier implements BleService {
   final _acousticController = StreamController<AcousticReading>.broadcast();
   @override
   Stream<AcousticReading> get acousticStream => _acousticController.stream;
+
+  final _screeningResultController = StreamController<SwaasAiBleResult>.broadcast();
+  @override
+  Stream<SwaasAiBleResult> get screeningResultStream => _screeningResultController.stream;
 
   final List<SpirometryPoint> _currentBlowPoints = [];
   @override
@@ -129,7 +205,7 @@ class RealBleService extends ChangeNotifier implements BleService {
       // 1. Verify Bluetooth Hardware Support
       if (await FlutterBluePlus.isSupported == false) {
         _setConnectionState(
-          BleConnectionState.disconnected,
+          BleConnectionState.error,
           error: 'Bluetooth Low Energy is not supported on this device.',
         );
         return;
@@ -159,14 +235,17 @@ class RealBleService extends ChangeNotifier implements BleService {
           );
 
           final matchesService = r.advertisementData.serviceUuids.any(
-            (uuid) => uuid.toString().toLowerCase() == BleConfig.serviceUuid.toLowerCase(),
+            (uuid) =>
+                uuid.toString().toLowerCase() == BleConfig.serviceUuid.toLowerCase() ||
+                uuid.toString().toLowerCase().replaceAll('-', '') ==
+                    BleConfig.serviceUuid.toLowerCase().replaceAll('-', ''),
           );
 
-          // Filter by SwasthAI device name, prefix or advertised service UUID
+          // Filter by SwaasAI device name, prefix or advertised service UUID
           if (matchesPrefix || matchesService || devName.isNotEmpty) {
             final model = BleDeviceModel(
               id: r.device.remoteId.str,
-              name: devName.isNotEmpty ? devName : 'SwasthAI Device',
+              name: devName.isNotEmpty ? devName : BleConfig.targetDeviceName,
               rssi: r.rssi,
               platformDevice: r.device,
             );
@@ -190,8 +269,8 @@ class RealBleService extends ChangeNotifier implements BleService {
     } catch (e) {
       debugPrint('[RealBleService] Scan error: $e');
       _setConnectionState(
-        BleConnectionState.disconnected,
-        error: 'Bluetooth access is required to connect SwasthAI to the screening device.',
+        BleConnectionState.error,
+        error: 'Bluetooth access error: $e',
       );
     }
   }
@@ -221,7 +300,7 @@ class RealBleService extends ChangeNotifier implements BleService {
 
     if (targetBleDevice == null) {
       _setConnectionState(
-        BleConnectionState.disconnected,
+        BleConnectionState.error,
         error: 'Invalid device selected.',
       );
       return;
@@ -238,6 +317,8 @@ class RealBleService extends ChangeNotifier implements BleService {
       // Connect with configured timeout
       await targetBleDevice.connect(timeout: BleConfig.connectTimeout, autoConnect: false);
 
+      _setConnectionState(BleConnectionState.connected);
+
       // Listen for unexpected connection drops
       _deviceStateSubscription?.cancel();
       _deviceStateSubscription = targetBleDevice.connectionState.listen((state) {
@@ -247,7 +328,7 @@ class RealBleService extends ChangeNotifier implements BleService {
         }
       });
 
-      // Request MTU negotiation (512 for optimal sensor packets)
+      // Request MTU negotiation
       if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
         try {
           await targetBleDevice.requestMtu(512);
@@ -255,56 +336,174 @@ class RealBleService extends ChangeNotifier implements BleService {
       }
 
       // Discover GATT Services
+      _setConnectionState(BleConnectionState.discoveringServices);
       final services = await targetBleDevice.discoverServices();
-      await _setupCharacteristics(services);
+      final hasSetupCharacteristic = await _setupHardwareContract(services);
 
-      _setConnectionState(BleConnectionState.connected);
+      if (hasSetupCharacteristic) {
+        _setConnectionState(BleConnectionState.ready);
+      } else {
+        _setConnectionState(
+          BleConnectionState.error,
+          error: 'Required SwasAI BLE characteristic was not found.',
+        );
+      }
     } catch (e) {
       debugPrint('[RealBleService] Connection error: $e');
       _setConnectionState(
-        BleConnectionState.disconnected,
+        BleConnectionState.error,
         error: 'Failed to connect to SwasthAI device. Make sure the device is powered on.',
       );
     }
   }
 
-  Future<void> _setupCharacteristics(List<BluetoothService> services) async {
+  Future<bool> _setupHardwareContract(List<BluetoothService> services) async {
     for (final sub in _characteristicSubscriptions) {
       await sub.cancel();
     }
     _characteristicSubscriptions.clear();
+    _screeningResultCharacteristic = null;
+
+    final targetServiceUuidNorm = BleConfig.serviceUuid.toLowerCase().replaceAll('-', '');
+    final targetCharUuidNorm = BleConfig.screeningResultCharacteristicUuid.toLowerCase().replaceAll('-', '');
 
     for (final s in services) {
+      final serviceUuidNorm = s.uuid.toString().toLowerCase().replaceAll('-', '');
+      final isMatchingService = serviceUuidNorm == targetServiceUuidNorm;
+
       for (final c in s.characteristics) {
-        final charUuidStr = c.uuid.toString().toLowerCase();
+        final charUuidNorm = c.uuid.toString().toLowerCase().replaceAll('-', '');
 
-        // 1. Vitals characteristic
-        if (charUuidStr == BleConfig.vitalsCharacteristicUuid.toLowerCase()) {
-          await c.setNotifyValue(true);
-          final sub = c.onValueReceived.listen((bytes) {
-            _onVitalsPacketReceived(bytes);
-          });
-          _characteristicSubscriptions.add(sub);
+        // 1. Official Hardware Contract Characteristic (READ + NOTIFY)
+        if (charUuidNorm == targetCharUuidNorm ||
+            (isMatchingService && (c.properties.notify || c.properties.read))) {
+          _screeningResultCharacteristic = c;
+
+          if (c.properties.notify) {
+            try {
+              await c.setNotifyValue(true);
+              final sub = c.onValueReceived.listen((bytes) {
+                _onSwaasAiPacketReceived(bytes);
+              });
+              _characteristicSubscriptions.add(sub);
+              debugPrint('[RealBleService] Subscribed to NOTIFY on ${c.uuid}');
+            } catch (e) {
+              debugPrint('[RealBleService] Failed to setNotifyValue: $e');
+            }
+          }
         }
 
-        // 2. Airflow characteristic
-        if (charUuidStr == BleConfig.airflowCharacteristicUuid.toLowerCase()) {
-          await c.setNotifyValue(true);
-          final sub = c.onValueReceived.listen((bytes) {
-            _onAirflowPacketReceived(bytes);
-          });
-          _characteristicSubscriptions.add(sub);
+        // 2. Compatibility Vitals characteristic (Phase 3 fallback)
+        if (charUuidNorm == BleConfig.vitalsCharacteristicUuid.toLowerCase().replaceAll('-', '')) {
+          if (c.properties.notify) {
+            try {
+              await c.setNotifyValue(true);
+              final sub = c.onValueReceived.listen((bytes) {
+                _onVitalsPacketReceived(bytes);
+              });
+              _characteristicSubscriptions.add(sub);
+            } catch (_) {}
+          }
         }
 
-        // 3. Acoustic characteristic
-        if (charUuidStr == BleConfig.acousticCharacteristicUuid.toLowerCase()) {
-          await c.setNotifyValue(true);
-          final sub = c.onValueReceived.listen((bytes) {
-            _onAcousticPacketReceived(bytes);
-          });
-          _characteristicSubscriptions.add(sub);
+        // 3. Compatibility Airflow characteristic
+        if (charUuidNorm == BleConfig.airflowCharacteristicUuid.toLowerCase().replaceAll('-', '')) {
+          if (c.properties.notify) {
+            try {
+              await c.setNotifyValue(true);
+              final sub = c.onValueReceived.listen((bytes) {
+                _onAirflowPacketReceived(bytes);
+              });
+              _characteristicSubscriptions.add(sub);
+            } catch (_) {}
+          }
+        }
+
+        // 4. Compatibility Acoustic characteristic
+        if (charUuidNorm == BleConfig.acousticCharacteristicUuid.toLowerCase().replaceAll('-', '')) {
+          if (c.properties.notify) {
+            try {
+              await c.setNotifyValue(true);
+              final sub = c.onValueReceived.listen((bytes) {
+                _onAcousticPacketReceived(bytes);
+              });
+              _characteristicSubscriptions.add(sub);
+            } catch (_) {}
+          }
         }
       }
+    }
+
+    return _screeningResultCharacteristic != null;
+  }
+
+  @override
+  Future<SwaasAiBleResult?> readLatestResult() async {
+    if (_screeningResultCharacteristic == null) {
+      debugPrint('[RealBleService] Cannot READ: screening characteristic is null.');
+      _errorMessage = 'Required SwasAI BLE characteristic was not found.';
+      notifyListeners();
+      return null;
+    }
+
+    try {
+      _setConnectionState(BleConnectionState.receivingResult);
+      final bytes = await _screeningResultCharacteristic!.read();
+      final result = _onSwaasAiPacketReceived(bytes);
+      _setConnectionState(BleConnectionState.ready);
+      return result;
+    } catch (e) {
+      debugPrint('[RealBleService] READ error: $e');
+      _setConnectionState(
+        BleConnectionState.ready,
+        error: 'Failed to read result from device: $e',
+      );
+      return null;
+    }
+  }
+
+  SwaasAiBleResult? _onSwaasAiPacketReceived(List<int> bytes) {
+    if (bytes.isEmpty) return null;
+
+    final rawString = utf8.decode(bytes, allowMalformed: true).trim();
+    _lastRawPacket = rawString;
+    _lastPacketTime = DateTime.now();
+
+    final result = SwaasAiPacketParser.tryParse(rawString);
+    if (result != null) {
+      _latestScreeningResult = result;
+      _screeningResultController.add(result);
+
+      // Backwards compatibility updates for vitals and sensor reading stream
+      if (result.spo2 != null) {
+        _latestVitals = VitalsReading(
+          heartRate: 0,
+          spo2: result.spo2!,
+          ppgValue: 0.5,
+          timestamp: DateTime.now(),
+        );
+        _vitalsController.add(_latestVitals);
+      }
+
+      _sensorReadingController.add(
+        SensorReading(
+          id: result.id,
+          screeningId: 'ble_${result.id}',
+          timestamp: DateTime.now(),
+          spo2: result.spo2,
+          heartRate: null,
+          pressure: result.airflow != null ? (result.airflow! / 10000.0) : null,
+          coughActivity: result.cough != null ? (result.cough! / 2000.0).clamp(0.0, 1.0) : null,
+        ),
+      );
+
+      notifyListeners();
+      return result;
+    } else {
+      debugPrint('[RealBleService] Malformed packet received: "$rawString"');
+      _errorMessage = 'Invalid screening result received.';
+      notifyListeners();
+      return null;
     }
   }
 
@@ -359,7 +558,7 @@ class RealBleService extends ChangeNotifier implements BleService {
     } else {
       _setConnectionState(
         BleConnectionState.connectionLost,
-        error: 'Connection lost. Please reconnect the device.',
+        error: 'Device disconnected. Previously collected data is preserved.',
       );
     }
   }
@@ -387,6 +586,13 @@ class RealBleService extends ChangeNotifier implements BleService {
     _characteristicSubscriptions.clear();
     _deviceStateSubscription?.cancel();
     _deviceStateSubscription = null;
+    _screeningResultCharacteristic = null;
+  }
+
+  @override
+  void emitMockScreeningResult({String? rawPacket}) {
+    final packet = rawPacket ?? 'R01,42350,97,1860,42,MODERATE';
+    _onSwaasAiPacketReceived(utf8.encode(packet));
   }
 
   @override
@@ -431,9 +637,7 @@ class RealBleService extends ChangeNotifier implements BleService {
   }
 
   @override
-  void toggleSimulatorMode(bool enable) {
-    // Controlled via AppBleService
-  }
+  void toggleSimulatorMode(bool enable) {}
 
   @override
   void triggerSimulatorBlow({bool simulateObstruction = false}) {}
@@ -453,20 +657,21 @@ class RealBleService extends ChangeNotifier implements BleService {
     _vitalsController.close();
     _spirometryController.close();
     _acousticController.close();
+    _screeningResultController.close();
     super.dispose();
   }
 }
 
-/// Mock BLE Service implementation simulating ESP32 hardware for testing and development.
+/// Mock BLE Service implementation simulating SwaasAI ESP32 hardware for testing and development.
 class MockBleService extends ChangeNotifier implements BleService {
-  BleConnectionState _connectionState = BleConnectionState.connected;
+  BleConnectionState _connectionState = BleConnectionState.ready;
   @override
   BleConnectionState get connectionState => _connectionState;
 
   @override
   bool get isSimulatorMode => true;
 
-  String? _connectedDeviceName = 'SWASTHAI_ESP32 (Simulated)';
+  String? _connectedDeviceName = 'SwaasAI_ESP32 (Simulated)';
   @override
   String? get connectedDeviceName => _connectedDeviceName;
 
@@ -475,7 +680,7 @@ class MockBleService extends ChangeNotifier implements BleService {
 
   final List<BleDeviceModel> _discoveredDevices = [
     const BleDeviceModel(
-      id: 'MOCK_ESP32_01',
+      id: 'MOCK_SWAASAI_01',
       name: BleConfig.targetDeviceName,
       rssi: -58,
       isConnected: true,
@@ -483,6 +688,18 @@ class MockBleService extends ChangeNotifier implements BleService {
   ];
   @override
   List<BleDeviceModel> get discoveredDevices => List.unmodifiable(_discoveredDevices);
+
+  SwaasAiBleResult? _latestScreeningResult;
+  @override
+  SwaasAiBleResult? get latestScreeningResult => _latestScreeningResult;
+
+  String? _lastRawPacket;
+  @override
+  String? get lastRawPacket => _lastRawPacket;
+
+  DateTime? _lastPacketTime;
+  @override
+  DateTime? get lastPacketTime => _lastPacketTime;
 
   VitalsReading _latestVitals = VitalsReading.initial();
   @override
@@ -511,6 +728,10 @@ class MockBleService extends ChangeNotifier implements BleService {
   final _acousticController = StreamController<AcousticReading>.broadcast();
   @override
   Stream<AcousticReading> get acousticStream => _acousticController.stream;
+
+  final _screeningResultController = StreamController<SwaasAiBleResult>.broadcast();
+  @override
+  Stream<SwaasAiBleResult> get screeningResultStream => _screeningResultController.stream;
 
   final List<SpirometryPoint> _currentBlowPoints = [];
   @override
@@ -544,13 +765,18 @@ class MockBleService extends ChangeNotifier implements BleService {
   }
 
   void _startSimulator() {
-    _connectionState = BleConnectionState.connected;
-    _connectedDeviceName = 'SWASTHAI_ESP32 (Simulated)';
+    _connectionState = BleConnectionState.ready;
+    _connectedDeviceName = 'SwaasAI_ESP32 (Simulated)';
     _connectionStateController.add(_connectionState);
+
+    // Provide default initial mock packet
+    _lastRawPacket = 'R01,42350,97,1860,42,MODERATE';
+    _lastPacketTime = DateTime.now();
+    _latestScreeningResult = SwaasAiPacketParser.tryParse(_lastRawPacket!);
 
     _vitalsSimTimer?.cancel();
     _vitalsSimTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
-      if (_connectionState != BleConnectionState.connected) return;
+      if (_connectionState != BleConnectionState.ready && _connectionState != BleConnectionState.connected) return;
 
       _simPhase += 0.25;
       final ppg = (sin(_simPhase) * 0.4 + sin(_simPhase * 2) * 0.15 + 0.5).clamp(0.05, 0.95);
@@ -583,7 +809,7 @@ class MockBleService extends ChangeNotifier implements BleService {
 
     _acousticSimTimer?.cancel();
     _acousticSimTimer = Timer.periodic(const Duration(seconds: 4), (_) {
-      if (_connectionState != BleConnectionState.connected) return;
+      if (_connectionState != BleConnectionState.ready && _connectionState != BleConnectionState.connected) return;
       _latestAcoustic = AcousticReading(
         rmsAmplitude: 0.12,
         coughDetected: false,
@@ -609,7 +835,7 @@ class MockBleService extends ChangeNotifier implements BleService {
     _connectionStateController.add(_connectionState);
     notifyListeners();
 
-    await Future.delayed(const Duration(milliseconds: 1000));
+    await Future.delayed(const Duration(milliseconds: 600));
     _connectionState = BleConnectionState.disconnected;
     _connectionStateController.add(_connectionState);
     notifyListeners();
@@ -630,7 +856,7 @@ class MockBleService extends ChangeNotifier implements BleService {
     _connectionStateController.add(_connectionState);
     notifyListeners();
 
-    await Future.delayed(const Duration(milliseconds: 800));
+    await Future.delayed(const Duration(milliseconds: 400));
     _startSimulator();
     notifyListeners();
   }
@@ -642,6 +868,38 @@ class MockBleService extends ChangeNotifier implements BleService {
     _connectedDeviceName = null;
     _connectionStateController.add(_connectionState);
     notifyListeners();
+  }
+
+  @override
+  Future<SwaasAiBleResult?> readLatestResult() async {
+    _connectionState = BleConnectionState.receivingResult;
+    _connectionStateController.add(_connectionState);
+    notifyListeners();
+
+    await Future.delayed(const Duration(milliseconds: 300));
+    final packet = _lastRawPacket ?? 'R01,42350,97,1860,42,MODERATE';
+    final result = SwaasAiPacketParser.parse(packet);
+    _latestScreeningResult = result;
+    _lastPacketTime = DateTime.now();
+    _screeningResultController.add(result);
+
+    _connectionState = BleConnectionState.ready;
+    _connectionStateController.add(_connectionState);
+    notifyListeners();
+    return result;
+  }
+
+  @override
+  void emitMockScreeningResult({String? rawPacket}) {
+    final packet = rawPacket ?? 'R01,42350,97,1860,42,MODERATE';
+    _lastRawPacket = packet;
+    _lastPacketTime = DateTime.now();
+    final result = SwaasAiPacketParser.tryParse(packet);
+    if (result != null) {
+      _latestScreeningResult = result;
+      _screeningResultController.add(result);
+      notifyListeners();
+    }
   }
 
   @override
@@ -751,9 +1009,7 @@ class MockBleService extends ChangeNotifier implements BleService {
   }
 
   @override
-  void toggleSimulatorMode(bool enable) {
-    // Controlled via AppBleService
-  }
+  void toggleSimulatorMode(bool enable) {}
 
   @override
   void dispose() {
@@ -763,6 +1019,7 @@ class MockBleService extends ChangeNotifier implements BleService {
     _vitalsController.close();
     _spirometryController.close();
     _acousticController.close();
+    _screeningResultController.close();
     super.dispose();
   }
 }
@@ -778,6 +1035,7 @@ class AppBleService extends ChangeNotifier implements BleService {
   final _vitalsController = StreamController<VitalsReading>.broadcast();
   final _spirometryController = StreamController<SpirometryPoint>.broadcast();
   final _acousticController = StreamController<AcousticReading>.broadcast();
+  final _screeningResultController = StreamController<SwaasAiBleResult>.broadcast();
 
   final List<StreamSubscription> _delegatedSubs = [];
 
@@ -805,6 +1063,7 @@ class AppBleService extends ChangeNotifier implements BleService {
     _delegatedSubs.add(_activeService.vitalsStream.listen(_vitalsController.add));
     _delegatedSubs.add(_activeService.spirometryStream.listen(_spirometryController.add));
     _delegatedSubs.add(_activeService.acousticStream.listen(_acousticController.add));
+    _delegatedSubs.add(_activeService.screeningResultStream.listen(_screeningResultController.add));
   }
 
   void _onActiveServiceChanged() {
@@ -831,6 +1090,18 @@ class AppBleService extends ChangeNotifier implements BleService {
 
   @override
   Stream<AcousticReading> get acousticStream => _acousticController.stream;
+
+  @override
+  Stream<SwaasAiBleResult> get screeningResultStream => _screeningResultController.stream;
+
+  @override
+  SwaasAiBleResult? get latestScreeningResult => _activeService.latestScreeningResult;
+
+  @override
+  String? get lastRawPacket => _activeService.lastRawPacket;
+
+  @override
+  DateTime? get lastPacketTime => _activeService.lastPacketTime;
 
   @override
   VitalsReading get latestVitals => _activeService.latestVitals;
@@ -867,6 +1138,12 @@ class AppBleService extends ChangeNotifier implements BleService {
 
   @override
   Future<void> disconnect() => _activeService.disconnect();
+
+  @override
+  Future<SwaasAiBleResult?> readLatestResult() => _activeService.readLatestResult();
+
+  @override
+  void emitMockScreeningResult({String? rawPacket}) => _activeService.emitMockScreeningResult(rawPacket: rawPacket);
 
   @override
   void toggleSimulatorMode(bool enable) {
@@ -915,6 +1192,7 @@ class AppBleService extends ChangeNotifier implements BleService {
     _vitalsController.close();
     _spirometryController.close();
     _acousticController.close();
+    _screeningResultController.close();
     super.dispose();
   }
 }

@@ -109,7 +109,7 @@ void main() {
       expect(ctrl.session!.status, equals(ScreeningStatus.inProgress));
       expect(ctrl.sensorReading, isNotNull);
       expect(ctrl.sensorReading!.spo2, equals(97));
-      expect(ctrl.sensorReading!.heartRate, equals(82));
+      expect(ctrl.sensorReading!.heartRate, isNull);
     });
 
     test('6. Save questionnaire responses to current screening state', () {

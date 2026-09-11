@@ -44,7 +44,7 @@ class _BleScanSheetState extends State<BleScanSheet> {
                   Icon(Icons.bluetooth_searching, color: AppTheme.primaryTeal),
                   SizedBox(width: 10),
                   Text(
-                    'Connect SWASTHAI Device',
+                    'Connect SwaasAI Device',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textLight),
                   ),
                 ],
@@ -57,7 +57,7 @@ class _BleScanSheetState extends State<BleScanSheet> {
           ),
           const SizedBox(height: 6),
           const Text(
-            'Ensure your ESP32 device is powered on and advertising SWASTHAI service.',
+            'Ensure your SwaasAI ESP32 device is powered on and advertising BLE service.',
             style: TextStyle(fontSize: 13, color: AppTheme.textMuted),
           ),
           const SizedBox(height: 16),
@@ -133,9 +133,9 @@ class _BleScanSheetState extends State<BleScanSheet> {
                         padding: const EdgeInsets.all(24.0),
                         child: Text(
                           ble.connectionState == BleConnectionState.scanning
-                              ? 'Searching for nearby ESP32 devices...'
+                              ? 'Searching for nearby SwaasAI ESP32 devices...'
                               : (ble.errorMessage ??
-                                  'No SWASTHAI devices found. Make sure Bluetooth is enabled and the ESP32 is powered.'),
+                                  'No SwaasAI devices found. Make sure Bluetooth is enabled and the ESP32 is powered.'),
                           textAlign: TextAlign.center,
                           style: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
                         ),
@@ -146,24 +146,25 @@ class _BleScanSheetState extends State<BleScanSheet> {
                       itemCount: ble.discoveredDevices.length,
                       itemBuilder: (ctx, idx) {
                         final dev = ble.discoveredDevices[idx];
-                        final isSwasthai = dev.name.toUpperCase().contains('SWASTHAI') ||
+                        final isSwaas = dev.name.toUpperCase().contains('SWAAS') ||
+                            dev.name.toUpperCase().contains('SWASTH') ||
                             dev.name.toUpperCase().contains('ESP32');
 
                         return ListTile(
                           contentPadding: EdgeInsets.zero,
                           leading: CircleAvatar(
-                            backgroundColor: isSwasthai ? AppTheme.primaryTeal.withAlpha(30) : Colors.grey.withAlpha(30),
+                            backgroundColor: isSwaas ? AppTheme.primaryTeal.withAlpha(30) : Colors.grey.withAlpha(30),
                             child: Icon(
                               Icons.devices,
-                              color: isSwasthai ? AppTheme.primaryTeal : Colors.grey,
+                              color: isSwaas ? AppTheme.primaryTeal : Colors.grey,
                               size: 20,
                             ),
                           ),
                           title: Text(
                             dev.name,
                             style: TextStyle(
-                              color: isSwasthai ? AppTheme.textLight : AppTheme.textMuted,
-                              fontWeight: isSwasthai ? FontWeight.bold : FontWeight.normal,
+                              color: isSwaas ? AppTheme.textLight : AppTheme.textMuted,
+                              fontWeight: isSwaas ? FontWeight.bold : FontWeight.normal,
                             ),
                           ),
                           subtitle: Text(
