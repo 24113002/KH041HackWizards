@@ -44,7 +44,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createDB,
       onUpgrade: _onUpgradeDB,
     );
@@ -54,6 +54,7 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE patients (
         id TEXT PRIMARY KEY,
+        backend_id INTEGER,
         full_name TEXT NOT NULL,
         name TEXT,
         age INTEGER NOT NULL,
@@ -73,7 +74,9 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE screenings (
         id TEXT PRIMARY KEY,
+        backend_id INTEGER,
         patient_id TEXT NOT NULL,
+        patient_backend_id INTEGER,
         started_at TEXT NOT NULL,
         completed_at TEXT,
         status TEXT NOT NULL,
@@ -113,7 +116,17 @@ class DatabaseHelper {
         await db.execute('ALTER TABLE screenings ADD COLUMN risk_category TEXT');
       } catch (_) {}
     }
+    if (oldVersion < 3) {
+      try {
+        await db.execute('ALTER TABLE patients ADD COLUMN backend_id INTEGER');
+      } catch (_) {}
+      try {
+        await db.execute('ALTER TABLE screenings ADD COLUMN backend_id INTEGER');
+        await db.execute('ALTER TABLE screenings ADD COLUMN patient_backend_id INTEGER');
+      } catch (_) {}
+    }
   }
+
 
   // --- Patient Operations ---
 
@@ -148,6 +161,25 @@ class DatabaseHelper {
       return Patient.fromMap(maps.first);
     }
     return null;
+  }
+
+  Future<Patient?> getPatientByBackendId(int backendId) async {
+    final db = await database;
+    final maps = await db.query('patients', where: 'backend_id = ?', whereArgs: [backendId]);
+    if (maps.isNotEmpty) {
+      return Patient.fromMap(maps.first);
+    }
+    return null;
+  }
+
+  Future<void> updatePatientBackendId(String localId, int backendId) async {
+    final db = await database;
+    await db.update(
+      'patients',
+      {'backend_id': backendId},
+      where: 'id = ?',
+      whereArgs: [localId],
+    );
   }
 
   Future<List<Patient>> getAllPatients() async {
@@ -189,6 +221,16 @@ class DatabaseHelper {
     );
   }
 
+  Future<void> updateScreeningBackendId(String localId, int backendId) async {
+    final db = await database;
+    await db.update(
+      'screenings',
+      {'backend_id': backendId},
+      where: 'id = ?',
+      whereArgs: [localId],
+    );
+  }
+
   Future<int> deleteScreening(String id) async {
     final db = await database;
     return await db.delete('screenings', where: 'id = ?', whereArgs: [id]);
@@ -199,6 +241,17 @@ class DatabaseHelper {
     final maps = await db.query('screenings', where: 'id = ?', whereArgs: [id]);
     if (maps.isNotEmpty) {
       final patient = await getPatient(maps.first['patient_id'] as String);
+      return ScreeningSession.fromDbMap(maps.first, attachedPatient: patient);
+    }
+    return null;
+  }
+
+  Future<ScreeningSession?> getScreeningByBackendId(int backendId) async {
+    final db = await database;
+    final maps = await db.query('screenings', where: 'backend_id = ?', whereArgs: [backendId]);
+    if (maps.isNotEmpty) {
+      final patientId = maps.first['patient_id'] as String;
+      final patient = await getPatient(patientId);
       return ScreeningSession.fromDbMap(maps.first, attachedPatient: patient);
     }
     return null;

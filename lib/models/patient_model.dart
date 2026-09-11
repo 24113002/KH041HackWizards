@@ -4,6 +4,7 @@ enum Gender { male, female, other }
 
 class Patient {
   final String id;
+  final int? backendId;
   final String fullName;
   final int age;
   final Gender gender;
@@ -19,6 +20,7 @@ class Patient {
 
   Patient({
     required this.id,
+    this.backendId,
     String? fullName,
     String? name,
     required this.age,
@@ -87,6 +89,7 @@ class Patient {
 
   Patient copyWith({
     String? id,
+    int? backendId,
     String? fullName,
     String? name,
     int? age,
@@ -103,6 +106,7 @@ class Patient {
   }) {
     return Patient(
       id: id ?? this.id,
+      backendId: backendId ?? this.backendId,
       fullName: fullName ?? name ?? this.fullName,
       age: age ?? this.age,
       gender: gender ?? this.gender,
@@ -121,6 +125,7 @@ class Patient {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'backend_id': backendId,
       'full_name': fullName,
       'name': fullName, // compatibility
       'age': age,
@@ -140,7 +145,8 @@ class Patient {
   factory Patient.fromMap(Map<String, dynamic> map) {
     final nameStr = (map['full_name'] as String?) ?? (map['name'] as String?) ?? '';
     return Patient(
-      id: map['id'] as String,
+      id: (map['id'] as String?) ?? (map['backend_id']?.toString() ?? ''),
+      backendId: (map['backend_id'] as num?)?.toInt(),
       fullName: nameStr,
       age: (map['age'] as num).toInt(),
       gender: Gender.values.firstWhere(
@@ -158,4 +164,37 @@ class Patient {
       updatedAt: DateTime.tryParse(map['updated_at'] as String? ?? '') ?? DateTime.now(),
     );
   }
+
+  /// Serializes patient payload matching FastAPI PatientCreate / PatientUpdate schema
+  Map<String, dynamic> toApiJson() {
+    return {
+      'full_name': fullName,
+      'age': age,
+      'gender': gender.name,
+      'village': village.isNotEmpty ? village : null,
+      'occupation': occupation.isNotEmpty ? occupation : null,
+      'smoking_status': smokingStatus,
+    };
+  }
+
+  /// Deserializes patient from FastAPI PatientResponse schema
+  factory Patient.fromApiJson(Map<String, dynamic> json, {String? localId}) {
+    final bId = (json['id'] as num?)?.toInt();
+    return Patient(
+      id: localId ?? bId?.toString() ?? '',
+      backendId: bId,
+      fullName: (json['full_name'] as String?) ?? '',
+      age: (json['age'] as num?)?.toInt() ?? 0,
+      gender: Gender.values.firstWhere(
+        (g) => g.name.toLowerCase() == ((json['gender'] as String?) ?? '').toLowerCase(),
+        orElse: () => Gender.male,
+      ),
+      village: (json['village'] as String?) ?? '',
+      occupation: (json['occupation'] as String?) ?? '',
+      smokingStatus: (json['smoking_status'] as String?) ?? 'Non-smoker',
+      createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
+      updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? '') ?? DateTime.now(),
+    );
+  }
 }
+

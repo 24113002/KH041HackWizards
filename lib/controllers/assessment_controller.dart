@@ -3,6 +3,7 @@ import '../engine/risk_assessment_engine.dart';
 import '../models/risk_assessment_input.dart';
 import '../models/screening_result_model.dart';
 import '../models/swaas_ai_ble_result.dart';
+import '../services/backend_api_service.dart';
 import 'current_screening_controller.dart';
 
 enum AssessmentStatus {
@@ -37,9 +38,14 @@ class AssessmentController extends ChangeNotifier {
     notifyListeners();
   }
 
+  final BackendApiService _apiService;
+
+  AssessmentController({BackendApiService? apiService})
+      : _apiService = apiService ?? BackendApiService();
+
   /// Evaluates patient, questionnaire, and sensor observations safely.
   ///
-  /// Enforces patient data isolation and prevents patient data mixing.
+  /// Enforces patient data isolation and consumes backend ML Fusion when online.
   Future<RiskResult?> runAssessment({
     required RiskAssessmentInput input,
     required CurrentScreeningController currentScreeningController,
@@ -73,105 +79,149 @@ class AssessmentController extends ChangeNotifier {
 
       final q = input.questionnaire;
       final ble = input.bleResult;
-      final RiskResult evaluatedResult;
+      RiskResult? evaluatedResult;
 
-      // 2. Risk Assessment Evaluation
-      if (ble != null) {
-        if (ble.isIncomplete || ble.risk == null) {
-          // Incomplete Screening Handling (NA preserved)
-          final missingFactors = <String>[];
-          if (ble.spo2 == null) missingFactors.add('SpO₂: Not Available (NA)');
-          if (ble.airflow == null) missingFactors.add('Raw Airflow Feature: Not Available (NA)');
-          if (ble.cough == null) missingFactors.add('Cough Signal: Not Available (NA)');
-
-          evaluatedResult = RiskResult(
-            screeningId: input.screeningId,
-            riskScore: 0,
-            overallScore: 0,
-            riskCategory: 'Incomplete',
-            riskLevel: RiskLevel.low,
-            contributingFactors: [
-              ...missingFactors,
-              if (q.smokingStatus != 'Non-smoker') 'Smoking history: ${q.smokingStatus}',
-              if (q.biomassExposure != 'None') 'Biomass exposure: ${q.biomassExposure}',
-              if (q.breathlessness > 0) 'Breathlessness: Grade ${q.breathlessness}',
-              if (q.chronicCough) 'Chronic cough reported',
-            ],
-            recommendation:
-                'Screening incomplete. One or more required sensor measurements were unavailable. Please repeat the required measurement or follow clinical protocol.',
-            recommendations: const [
-              'Screening incomplete. One or more required sensor measurements were unavailable. Please repeat the required measurement or follow clinical protocol.'
-            ],
-            emergencyFlag: false,
-            spo2: 0,
-            heartRate: 0,
-            createdAt: ble.receivedAt,
-          );
-        } else {
-          // Valid Complete ESP32 Hardware Packet
-          final factors = <String>[];
-          if (q.smokingStatus != 'Non-smoker') {
-            factors.add(q.yearsSmoked > 0
-                ? 'Smoking history (${q.smokingStatus.toLowerCase()}, ${q.yearsSmoked.toStringAsFixed(0)} yrs)'
-                : 'Smoking history (${q.smokingStatus.toLowerCase()})');
-          }
-          if (q.biomassExposure == 'High/Daily' || q.biomassExposure == 'Moderate') {
-            factors.add('Biomass smoke exposure (${q.biomassExposure.toLowerCase()})');
-          }
-          if (q.breathlessness >= 2) {
-            factors.add('Breathlessness on exertion (mMRC Grade ${q.breathlessness})');
-          } else if (q.breathlessness == 1) {
-            factors.add('Mild exertion breathlessness (mMRC Grade 1)');
-          }
-          if (q.chronicCough) factors.add('Chronic cough (> 3 weeks)');
-          if (q.phlegm) factors.add('Regular phlegm / sputum production');
-          if (q.wheezing) factors.add('Wheezing / chest whistling');
-          if (q.recurrentRespiratoryProblems) factors.add('Recurrent respiratory problems');
-          if (ble.spo2 != null) factors.add('SpO₂ saturation: ${ble.spo2}%');
-          if (ble.airflow != null) factors.add('Raw Airflow Feature: ${ble.airflow}');
-          if (ble.cough != null) factors.add('Cough Signal: ${ble.cough}');
-
-          final recs = <String>[];
-          recs.add('Clinical evaluation is recommended when appropriate based on the screening result and symptoms.');
-          if (q.smokingStatus == 'Current smoker') {
-            recs.add('Advise smoking cessation counseling and support.');
-          }
-          if (q.biomassExposure == 'High/Daily' || q.biomassExposure == 'Moderate') {
-            recs.add('Advise minimizing indoor biomass/chulha smoke exposure with improved ventilation.');
+      // 2. Authoritative Backend ML Late-Fusion Evaluation (if reachable)
+      try {
+        final isOnline = await _apiService.checkHealth();
+        if (isOnline) {
+          int? patientBId = currentPatient.backendId;
+          if (patientBId == null) {
+            final syncedP = await _apiService.createPatient(currentPatient);
+            patientBId = syncedP.backendId;
           }
 
-          final bool isEmergency = ble.spo2 != null && ble.spo2! < 88;
-          if (isEmergency) {
-            recs.insert(0, 'URGENT: Low SpO₂ observed. Immediate medical evaluation recommended.');
-          }
+          if (patientBId != null) {
+            int? screeningBId = currentSession.backendId;
+            if (screeningBId == null) {
+              final startedS = await _apiService.startScreening(
+                patientBackendId: patientBId,
+                localScreeningId: currentSession.id,
+                localPatientId: currentPatient.id,
+              );
+              screeningBId = startedS.backendId;
+            }
 
-          evaluatedResult = RiskResult(
-            screeningId: input.screeningId,
-            riskScore: ble.risk!,
-            overallScore: ble.risk!,
-            riskCategory: ble.status.label,
-            riskLevel: _mapStatusToLevel(ble.status, isEmergency: isEmergency),
-            contributingFactors: factors.isNotEmpty ? factors : const ['Normal screening parameters'],
-            recommendation: recs.first,
-            recommendations: recs,
-            emergencyFlag: isEmergency,
-            spo2: ble.spo2 ?? 0,
-            heartRate: 0,
-            createdAt: ble.receivedAt,
-          );
+            if (screeningBId != null) {
+              // Submit Questionnaire to backend
+              await _apiService.submitQuestionnaire(screeningBId, q);
+
+              // Submit Sensor Reading to backend (from BLE or controller readings)
+              final sensorReading = currentScreeningController.sensorReading;
+              if (sensorReading != null) {
+                await _apiService.submitSensorReading(screeningBId, sensorReading);
+              }
+
+              // Trigger backend complete screening & ML late-fusion model
+              await _apiService.completeScreening(screeningBId, localScreeningId: currentSession.id);
+              evaluatedResult = await _apiService.getRiskResult(screeningBId, localScreeningId: currentSession.id);
+              debugPrint('[AssessmentController] Successfully received authoritative backend ML fusion result.');
+            }
+          }
         }
-      } else {
-        // Fallback to local RiskAssessmentEngine if no BLE result
-        evaluatedResult = RiskAssessmentEngine.evaluate(
-          patient: input.patient,
-          vitals: currentScreeningController.vitals,
-          spirometry: currentScreeningController.spirometry,
-          acoustic: currentScreeningController.acoustic,
-          questionnaire: q,
-        );
+      } catch (apiErr) {
+        debugPrint('[AssessmentController] Backend ML call deferred to offline fallback: $apiErr');
       }
 
-      // 3. Update CurrentScreeningController state
+      // 3. Offline / BLE Fallback Evaluation if backend evaluation was not completed
+      if (evaluatedResult == null) {
+        if (ble != null) {
+          if (ble.isIncomplete || ble.risk == null) {
+            // Incomplete Screening Handling (NA preserved)
+            final missingFactors = <String>[];
+            if (ble.spo2 == null) missingFactors.add('SpO₂: Not Available (NA)');
+            if (ble.airflow == null) missingFactors.add('Raw Airflow Feature: Not Available (NA)');
+            if (ble.cough == null) missingFactors.add('Cough Signal: Not Available (NA)');
+
+            evaluatedResult = RiskResult(
+              screeningId: input.screeningId,
+              riskScore: 0,
+              overallScore: 0,
+              riskCategory: 'Incomplete',
+              riskLevel: RiskLevel.low,
+              contributingFactors: [
+                ...missingFactors,
+                if (q.smokingStatus != 'Non-smoker') 'Smoking history: ${q.smokingStatus}',
+                if (q.biomassExposure != 'None') 'Biomass exposure: ${q.biomassExposure}',
+                if (q.breathlessness > 0) 'Breathlessness: Grade ${q.breathlessness}',
+                if (q.chronicCough) 'Chronic cough reported',
+              ],
+              recommendation:
+                  'Screening incomplete. One or more required sensor measurements were unavailable. Please repeat the required measurement or follow clinical protocol.',
+              recommendations: const [
+                'Screening incomplete. One or more required sensor measurements were unavailable. Please repeat the required measurement or follow clinical protocol.'
+              ],
+              emergencyFlag: false,
+              spo2: 0,
+              heartRate: 0,
+              createdAt: ble.receivedAt,
+            );
+          } else {
+            // Valid Complete ESP32 Hardware Packet
+            final factors = <String>[];
+            if (q.smokingStatus != 'Non-smoker') {
+              factors.add(q.yearsSmoked > 0
+                  ? 'Smoking history (${q.smokingStatus.toLowerCase()}, ${q.yearsSmoked.toStringAsFixed(0)} yrs)'
+                  : 'Smoking history (${q.smokingStatus.toLowerCase()})');
+            }
+            if (q.biomassExposure == 'High/Daily' || q.biomassExposure == 'Moderate') {
+              factors.add('Biomass smoke exposure (${q.biomassExposure.toLowerCase()})');
+            }
+            if (q.breathlessness >= 2) {
+              factors.add('Breathlessness on exertion (mMRC Grade ${q.breathlessness})');
+            } else if (q.breathlessness == 1) {
+              factors.add('Mild exertion breathlessness (mMRC Grade 1)');
+            }
+            if (q.chronicCough) factors.add('Chronic cough (> 3 weeks)');
+            if (q.phlegm) factors.add('Regular phlegm / sputum production');
+            if (q.wheezing) factors.add('Wheezing / chest whistling');
+            if (q.recurrentRespiratoryProblems) factors.add('Recurrent respiratory problems');
+            if (ble.spo2 != null) factors.add('SpO₂ saturation: ${ble.spo2}%');
+            if (ble.airflow != null) factors.add('Raw Airflow Feature: ${ble.airflow}');
+            if (ble.cough != null) factors.add('Cough Signal: ${ble.cough}');
+
+            final recs = <String>[];
+            recs.add('Clinical evaluation is recommended when appropriate based on the screening result and symptoms.');
+            if (q.smokingStatus == 'Current smoker') {
+              recs.add('Advise smoking cessation counseling and support.');
+            }
+            if (q.biomassExposure == 'High/Daily' || q.biomassExposure == 'Moderate') {
+              recs.add('Advise minimizing indoor biomass/chulha smoke exposure with improved ventilation.');
+            }
+
+            final bool isEmergency = ble.spo2 != null && ble.spo2! < 88;
+            if (isEmergency) {
+              recs.insert(0, 'URGENT: Low SpO₂ observed. Immediate medical evaluation recommended.');
+            }
+
+            evaluatedResult = RiskResult(
+              screeningId: input.screeningId,
+              riskScore: ble.risk!,
+              overallScore: ble.risk!,
+              riskCategory: ble.status.label,
+              riskLevel: _mapStatusToLevel(ble.status, isEmergency: isEmergency),
+              contributingFactors: factors.isNotEmpty ? factors : const ['Normal screening parameters'],
+              recommendation: recs.first,
+              recommendations: recs,
+              emergencyFlag: isEmergency,
+              spo2: ble.spo2 ?? 0,
+              heartRate: 0,
+              createdAt: ble.receivedAt,
+            );
+          }
+        } else {
+          // Fallback to local RiskAssessmentEngine if no BLE result
+          evaluatedResult = RiskAssessmentEngine.evaluate(
+            patient: input.patient,
+            vitals: currentScreeningController.vitals,
+            spirometry: currentScreeningController.spirometry,
+            acoustic: currentScreeningController.acoustic,
+            questionnaire: q,
+          );
+        }
+      }
+
+      // 4. Update CurrentScreeningController state
       currentScreeningController.updateQuestionnaire(q);
       currentScreeningController.updateRiskResult(evaluatedResult);
 
@@ -187,6 +237,7 @@ class AssessmentController extends ChangeNotifier {
       return null;
     }
   }
+
 
   static RiskLevel _mapStatusToLevel(SwaasAiStatus status, {bool isEmergency = false}) {
     if (isEmergency) return RiskLevel.critical;

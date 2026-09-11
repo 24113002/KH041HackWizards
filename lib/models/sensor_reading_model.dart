@@ -59,7 +59,7 @@ class SensorReading {
 
   factory SensorReading.fromMap(Map<String, dynamic> map) {
     return SensorReading(
-      id: map['id'] as String,
+      id: (map['id'] as String?) ?? '',
       screeningId: (map['screening_id'] as String?) ?? '',
       timestamp: DateTime.tryParse(map['timestamp'] as String? ?? '') ?? DateTime.now(),
       spo2: (map['spo2'] as num?)?.toInt(),
@@ -68,4 +68,29 @@ class SensorReading {
       coughActivity: (map['cough_activity'] as num?)?.toDouble(),
     );
   }
+
+  /// Serializes sensor reading matching FastAPI SensorReadingCreate schema
+  Map<String, dynamic> toApiJson() {
+    return {
+      'spo2': spo2?.toDouble(),
+      'heart_rate': heartRate?.toDouble(),
+      'pressure': pressure,
+      'cough_activity': coughActivity,
+      'timestamp': timestamp.toIso8601String(),
+    };
+  }
+
+  /// Deserializes sensor reading from FastAPI SensorReadingResponse schema
+  factory SensorReading.fromApiJson(Map<String, dynamic> json, {String? localScreeningId}) {
+    return SensorReading(
+      id: json['id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      screeningId: localScreeningId ?? json['screening_id']?.toString() ?? '',
+      timestamp: DateTime.tryParse(json['timestamp'] as String? ?? '') ?? DateTime.now(),
+      spo2: (json['spo2'] as num?)?.toInt(),
+      heartRate: (json['heart_rate'] as num?)?.toInt(),
+      pressure: (json['pressure'] as num?)?.toDouble(),
+      coughActivity: (json['cough_activity'] as num?)?.toDouble(),
+    );
+  }
 }
+

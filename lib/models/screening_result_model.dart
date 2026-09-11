@@ -244,4 +244,25 @@ class RiskResult {
       symptomScore: (map['symptom_score'] as num?)?.toInt() ?? 0,
     );
   }
+
+  /// Deserializes risk result from FastAPI RiskResultResponse schema
+  factory RiskResult.fromApiJson(Map<String, dynamic> json, {String? localScreeningId}) {
+    final cat = (json['risk_category'] as String?) ?? 'Low Risk';
+    final score = (json['risk_score'] as num?)?.round() ?? 0;
+    final factors = List<String>.from((json['contributing_factors'] as List<dynamic>?) ?? []);
+    final rec = (json['recommendation'] as String?) ?? 'Routine follow-up screening recommended.';
+
+    return RiskResult(
+      screeningId: localScreeningId ?? json['screening_id']?.toString() ?? '',
+      riskScore: score,
+      overallScore: score,
+      riskCategory: cat,
+      riskLevel: _resolveRiskLevel(cat),
+      contributingFactors: factors,
+      recommendation: rec,
+      recommendations: [rec],
+      createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
+    );
+  }
 }
+

@@ -32,7 +32,9 @@ extension ScreeningStatusExtension on ScreeningStatus {
 
 class ScreeningSession {
   final String id;
+  final int? backendId;
   final String patientId;
+  final int? patientBackendId;
   final DateTime startedAt;
   final DateTime? completedAt;
   final ScreeningStatus status;
@@ -51,7 +53,9 @@ class ScreeningSession {
 
   ScreeningSession({
     required this.id,
+    this.backendId,
     required this.patientId,
+    this.patientBackendId,
     DateTime? startedAt,
     DateTime? timestamp,
     this.completedAt,
@@ -82,7 +86,9 @@ class ScreeningSession {
 
   ScreeningSession copyWith({
     String? id,
+    int? backendId,
     String? patientId,
+    int? patientBackendId,
     DateTime? startedAt,
     DateTime? timestamp,
     DateTime? completedAt,
@@ -100,7 +106,9 @@ class ScreeningSession {
   }) {
     return ScreeningSession(
       id: id ?? this.id,
+      backendId: backendId ?? this.backendId,
       patientId: patientId ?? this.patientId,
+      patientBackendId: patientBackendId ?? this.patientBackendId,
       startedAt: startedAt ?? timestamp ?? this.startedAt,
       completedAt: completedAt ?? this.completedAt,
       status: status ?? this.status,
@@ -120,7 +128,9 @@ class ScreeningSession {
   Map<String, dynamic> toDbMap() {
     return {
       'id': id,
+      'backend_id': backendId,
       'patient_id': patientId,
+      'patient_backend_id': patientBackendId,
       'started_at': startedAt.toIso8601String(),
       'completed_at': completedAt?.toIso8601String(),
       'status': status.name,
@@ -209,8 +219,10 @@ class ScreeningSession {
     );
 
     return ScreeningSession(
-      id: map['id'] as String,
-      patientId: map['patient_id'] as String,
+      id: (map['id'] as String?) ?? (map['backend_id']?.toString() ?? ''),
+      backendId: (map['backend_id'] as num?)?.toInt(),
+      patientId: (map['patient_id'] as String?) ?? (map['patient_backend_id']?.toString() ?? ''),
+      patientBackendId: (map['patient_backend_id'] as num?)?.toInt(),
       startedAt: DateTime.tryParse(map['started_at'] as String? ?? map['timestamp'] as String? ?? '') ?? DateTime.now(),
       completedAt: DateTime.tryParse(map['completed_at'] as String? ?? ''),
       status: status,
@@ -226,4 +238,29 @@ class ScreeningSession {
       clinicalNotes: (map['clinical_notes'] as String?) ?? '',
     );
   }
+
+  /// Deserializes screening session from FastAPI ScreeningResponse or ScreeningDetailResponse
+  factory ScreeningSession.fromApiJson(Map<String, dynamic> json, {String? localId, String? localPatientId, Patient? attachedPatient}) {
+    final bId = (json['id'] as num?)?.toInt();
+    final pBId = (json['patient_id'] as num?)?.toInt();
+    final statusStr = (json['status'] as String?) ?? 'completed';
+    final status = ScreeningStatus.values.firstWhere(
+      (s) => s.name.toLowerCase() == statusStr.toLowerCase() || (s == ScreeningStatus.inProgress && statusStr == 'in_progress'),
+      orElse: () => ScreeningStatus.completed,
+    );
+
+    return ScreeningSession(
+      id: localId ?? bId?.toString() ?? '',
+      backendId: bId,
+      patientId: localPatientId ?? pBId?.toString() ?? '',
+      patientBackendId: pBId,
+      startedAt: DateTime.tryParse(json['started_at'] as String? ?? '') ?? DateTime.now(),
+      completedAt: DateTime.tryParse(json['completed_at'] as String? ?? ''),
+      status: status,
+      riskScore: (json['risk_score'] as num?)?.toInt(),
+      riskCategory: json['risk_category'] as String?,
+      patient: attachedPatient,
+    );
+  }
 }
+

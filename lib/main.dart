@@ -9,7 +9,9 @@ import 'controllers/screening_history_controller.dart';
 import 'data/database_helper.dart';
 import 'repositories/patient_repository.dart';
 import 'repositories/screening_repository.dart';
+import 'repositories/sync_repository.dart';
 import 'screens/home_screen.dart';
+import 'services/backend_api_service.dart';
 import 'services/ble_service.dart';
 import 'services/sensor_service.dart';
 import 'theme/app_theme.dart';
@@ -30,19 +32,19 @@ void main() async {
     debugPrint('Database init warning: $e');
   }
 
-  // Instantiate repositories & services
-  final patientRepo = LocalPatientRepository();
-  final screeningRepo = LocalScreeningRepository();
+  // Instantiate hybrid sync repositories & services
+  final syncRepo = SyncRepository();
   final sensorService = MockSensorService();
 
   runApp(
     SwasthaiApp(
-      patientRepository: patientRepo,
-      screeningRepository: screeningRepo,
+      patientRepository: syncRepo,
+      screeningRepository: syncRepo,
       sensorService: sensorService,
     ),
   );
 }
+
 
 class SwasthaiApp extends StatelessWidget {
   final PatientRepository patientRepository;

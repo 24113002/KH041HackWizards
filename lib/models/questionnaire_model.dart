@@ -172,4 +172,47 @@ class QuestionnaireResponse {
       hasTbHistory: (map['has_tb_history'] as num?)?.toInt() == 1,
     );
   }
+
+  /// Serializes questionnaire payload matching FastAPI QuestionnaireCreate schema
+  Map<String, dynamic> toApiJson() {
+    return {
+      'smoking_status': smokingStatus,
+      'years_smoked': yearsSmoked.toInt(),
+      'cigarettes_per_day': cigarettesPerDay,
+      'biomass_exposure': biomassExposure != 'None',
+      'breathlessness': breathlessness > 0,
+      'chronic_cough': chronicCough,
+      'phlegm': phlegm,
+      'wheezing': wheezing,
+      'recurrent_respiratory_problems': recurrentRespiratoryProblems,
+    };
+  }
+
+  /// Deserializes questionnaire response from FastAPI QuestionnaireResponseSchema
+  factory QuestionnaireResponse.fromApiJson(Map<String, dynamic> json, {String? localScreeningId}) {
+    final bExposure = json['biomass_exposure'];
+    final bExposureStr = (bExposure is bool)
+        ? (bExposure ? 'High/Daily' : 'None')
+        : (bExposure as String? ?? 'None');
+
+    final bLess = json['breathlessness'];
+    final bLessInt = (bLess is bool)
+        ? (bLess ? 1 : 0)
+        : ((bLess as num?)?.toInt() ?? 0);
+
+    return QuestionnaireResponse(
+      screeningId: localScreeningId ?? json['screening_id']?.toString() ?? '',
+      smokingStatus: (json['smoking_status'] as String?) ?? 'Non-smoker',
+      yearsSmoked: (json['years_smoked'] as num?)?.toDouble() ?? 0.0,
+      cigarettesPerDay: (json['cigarettes_per_day'] as num?)?.toInt() ?? 0,
+      biomassExposure: bExposureStr,
+      breathlessness: bLessInt,
+      chronicCough: json['chronic_cough'] == true || json['chronic_cough'] == 1,
+      phlegm: json['phlegm'] == true || json['phlegm'] == 1,
+      wheezing: json['wheezing'] == true || json['wheezing'] == 1,
+      recurrentRespiratoryProblems:
+          json['recurrent_respiratory_problems'] == true || json['recurrent_respiratory_problems'] == 1,
+    );
+  }
 }
+
