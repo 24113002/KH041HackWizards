@@ -1,0 +1,25 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environments & Virtual Environments
+.venv/
+env/
+venv/
+ENV/
+
+# Environment variables
+.env
+
+# SQLite local databases & logs
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+!data/.gitkeep
+*.log
