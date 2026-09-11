@@ -57,7 +57,11 @@ class _ScreeningResultScreenState extends State<ScreeningResultScreen> {
     final session = ScreeningSession(
       id: const Uuid().v4(),
       patientId: widget.patient.id,
-      timestamp: DateTime.now(),
+      startedAt: DateTime.now(),
+      completedAt: DateTime.now(),
+      status: ScreeningStatus.completed,
+      riskScore: widget.riskResult.riskScore,
+      riskCategory: widget.riskResult.riskCategory,
       patient: widget.patient,
       vitals: widget.vitals,
       spirometry: widget.spirometry,

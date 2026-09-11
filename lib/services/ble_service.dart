@@ -1,454 +1,917 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import '../config/ble_config.dart';
+import '../models/ble_device_model.dart';
 import '../models/sensor_data_model.dart';
+import '../models/sensor_reading_model.dart';
+import 'sensor_data_parser.dart';
 
 enum BleConnectionState {
   disconnected,
   scanning,
   connecting,
   connected,
+  connectionLost,
 }
 
-class BleService extends ChangeNotifier {
-  static const String swasthaiServiceUuid = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
-  static const String vitalsCharUuid = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
-  static const String airflowCharUuid = '1c95d5e3-d8f7-413a-bf3d-7a2e5d7be87e';
-  static const String acousticCharUuid = 'd271607c-9204-4769-a038-0796d5147a4b';
+/// Abstract BLE Service contract required for hardware-to-mobile sensor acquisition.
+abstract class BleService extends ChangeNotifier {
+  BleConnectionState get connectionState;
+  Stream<BleConnectionState> get connectionStateStream;
+  Stream<SensorReading> get sensorReadingStream;
+  Stream<VitalsReading> get vitalsStream;
+  Stream<SpirometryPoint> get spirometryStream;
+  Stream<AcousticReading> get acousticStream;
 
+  VitalsReading get latestVitals;
+  AcousticReading get latestAcoustic;
+  List<SpirometryPoint> get currentBlowPoints;
+  int get sessionCoughCount;
+  bool get isSimulatorMode;
+  bool get isBlowing;
+  String? get connectedDeviceName;
+  String? get errorMessage;
+  List<BleDeviceModel> get discoveredDevices;
+
+  Future<void> startScan({Duration timeout = BleConfig.scanTimeout});
+  Future<void> stopScan();
+  Future<void> connectToDevice(dynamic device);
+  Future<void> disconnect();
+  void toggleSimulatorMode(bool enable);
+  void resetSessionCounters();
+  SpirometrySummary computeSpirometrySummary();
+  void triggerSimulatorBlow({bool simulateObstruction = false});
+  void startSimulatedSpirometryBlow({bool simulateObstruction = false});
+  void triggerSimulatedCough();
+}
+
+/// Real BLE Service implementation communicating with physical ESP32 via flutter_blue_plus.
+class RealBleService extends ChangeNotifier implements BleService {
   BleConnectionState _connectionState = BleConnectionState.disconnected;
+  @override
   BleConnectionState get connectionState => _connectionState;
 
-  bool _isSimulatorMode = true; // Default to simulator mode for instant testing!
-  bool get isSimulatorMode => _isSimulatorMode;
+  @override
+  bool get isSimulatorMode => false;
 
   String? _connectedDeviceName;
+  @override
   String? get connectedDeviceName => _connectedDeviceName;
 
-  BluetoothDevice? _connectedDevice;
-  final List<ScanResult> _scanResults = [];
-  List<ScanResult> get scanResults => _scanResults;
+  String? _errorMessage;
+  @override
+  String? get errorMessage => _errorMessage;
 
-  // Real-time sensor state
+  BluetoothDevice? _connectedDevice;
+  final List<BleDeviceModel> _discoveredDevices = [];
+  @override
+  List<BleDeviceModel> get discoveredDevices => List.unmodifiable(_discoveredDevices);
+
   VitalsReading _latestVitals = VitalsReading.initial();
+  @override
   VitalsReading get latestVitals => _latestVitals;
 
   AcousticReading _latestAcoustic = AcousticReading.initial();
+  @override
   AcousticReading get latestAcoustic => _latestAcoustic;
 
-  // Stream Controllers
+  final _connectionStateController = StreamController<BleConnectionState>.broadcast();
+  @override
+  Stream<BleConnectionState> get connectionStateStream => _connectionStateController.stream;
+
+  final _sensorReadingController = StreamController<SensorReading>.broadcast();
+  @override
+  Stream<SensorReading> get sensorReadingStream => _sensorReadingController.stream;
+
   final _vitalsController = StreamController<VitalsReading>.broadcast();
+  @override
   Stream<VitalsReading> get vitalsStream => _vitalsController.stream;
 
   final _spirometryController = StreamController<SpirometryPoint>.broadcast();
+  @override
   Stream<SpirometryPoint> get spirometryStream => _spirometryController.stream;
 
   final _acousticController = StreamController<AcousticReading>.broadcast();
+  @override
   Stream<AcousticReading> get acousticStream => _acousticController.stream;
 
-  // Simulation Timers
-  Timer? _vitalsSimTimer;
-  Timer? _acousticSimTimer;
-  Timer? _blowSimTimer;
-  double _simTime = 0.0;
-  bool _isBlowing = false;
-  bool get isBlowing => _isBlowing;
-
-  // Spirometry session accumulator
   final List<SpirometryPoint> _currentBlowPoints = [];
-  List<SpirometryPoint> get currentBlowPoints => _currentBlowPoints;
+  @override
+  List<SpirometryPoint> get currentBlowPoints => List.unmodifiable(_currentBlowPoints);
 
-  // Acoustic session accumulator
   int _sessionCoughCount = 0;
+  @override
   int get sessionCoughCount => _sessionCoughCount;
 
-  BleService() {
-    if (_isSimulatorMode) {
-      _startSimulator();
-    }
+  @override
+  bool get isBlowing => false;
+
+  StreamSubscription<List<ScanResult>>? _scanSubscription;
+  StreamSubscription<BluetoothConnectionState>? _deviceStateSubscription;
+  final List<StreamSubscription> _characteristicSubscriptions = [];
+  int _autoReconnectAttempts = 0;
+
+  void _setConnectionState(BleConnectionState state, {String? error}) {
+    _connectionState = state;
+    _errorMessage = error;
+    _connectionStateController.add(state);
+    notifyListeners();
   }
 
-  void toggleSimulatorMode(bool enable) {
-    if (_isSimulatorMode == enable) return;
-    _isSimulatorMode = enable;
-    if (_isSimulatorMode) {
-      disconnect();
-      _startSimulator();
-    } else {
-      _stopSimulator();
-      _connectionState = BleConnectionState.disconnected;
-      _connectedDeviceName = null;
-      notifyListeners();
-    }
-  }
-
-  // ==========================================
-  // REAL BLE IMPLEMENTATION
-  // ==========================================
-
-  Future<void> startScan({Duration timeout = const Duration(seconds: 6)}) async {
-    if (_isSimulatorMode) return;
+  @override
+  Future<void> startScan({Duration timeout = BleConfig.scanTimeout}) async {
     try {
-      _scanResults.clear();
-      _connectionState = BleConnectionState.scanning;
-      notifyListeners();
+      _discoveredDevices.clear();
+      _errorMessage = null;
 
-      await FlutterBluePlus.startScan(
-        timeout: timeout,
-        withServices: [Guid(swasthaiServiceUuid)],
-      );
+      // 1. Verify Bluetooth Hardware Support
+      if (await FlutterBluePlus.isSupported == false) {
+        _setConnectionState(
+          BleConnectionState.disconnected,
+          error: 'Bluetooth Low Energy is not supported on this device.',
+        );
+        return;
+      }
 
-      FlutterBluePlus.scanResults.listen((results) {
-        _scanResults.clear();
-        _scanResults.addAll(results);
-        notifyListeners();
+      // 2. Verify Bluetooth Power State
+      final adapterState = await FlutterBluePlus.adapterState.first;
+      if (adapterState != BluetoothAdapterState.on) {
+        _setConnectionState(
+          BleConnectionState.disconnected,
+          error: 'Bluetooth is turned off. Please enable Bluetooth to connect the screening device.',
+        );
+        return;
+      }
+
+      _setConnectionState(BleConnectionState.scanning);
+
+      _scanSubscription?.cancel();
+      _scanSubscription = FlutterBluePlus.scanResults.listen((results) {
+        for (final r in results) {
+          final devName = r.device.platformName.isNotEmpty
+              ? r.device.platformName
+              : r.advertisementData.advName;
+
+          final matchesPrefix = BleConfig.devicePrefixes.any(
+            (prefix) => devName.toLowerCase().startsWith(prefix.toLowerCase()),
+          );
+
+          final matchesService = r.advertisementData.serviceUuids.any(
+            (uuid) => uuid.toString().toLowerCase() == BleConfig.serviceUuid.toLowerCase(),
+          );
+
+          // Filter by SwasthAI device name, prefix or advertised service UUID
+          if (matchesPrefix || matchesService || devName.isNotEmpty) {
+            final model = BleDeviceModel(
+              id: r.device.remoteId.str,
+              name: devName.isNotEmpty ? devName : 'SwasthAI Device',
+              rssi: r.rssi,
+              platformDevice: r.device,
+            );
+
+            final existingIndex = _discoveredDevices.indexWhere((d) => d.id == model.id);
+            if (existingIndex >= 0) {
+              _discoveredDevices[existingIndex] = model;
+            } else {
+              _discoveredDevices.add(model);
+            }
+            notifyListeners();
+          }
+        }
       });
 
-      await Future.delayed(timeout);
+      await FlutterBluePlus.startScan(timeout: timeout);
+      await FlutterBluePlus.isScanning.where((val) => val == false).first;
       if (_connectionState == BleConnectionState.scanning) {
-        _connectionState = BleConnectionState.disconnected;
-        notifyListeners();
+        _setConnectionState(BleConnectionState.disconnected);
       }
     } catch (e) {
-      debugPrint('BLE Scan error: $e');
-      _connectionState = BleConnectionState.disconnected;
-      notifyListeners();
+      debugPrint('[RealBleService] Scan error: $e');
+      _setConnectionState(
+        BleConnectionState.disconnected,
+        error: 'Bluetooth access is required to connect SwasthAI to the screening device.',
+      );
     }
   }
 
+  @override
   Future<void> stopScan() async {
     try {
       await FlutterBluePlus.stopScan();
-      if (_connectionState == BleConnectionState.scanning) {
-        _connectionState = BleConnectionState.disconnected;
-        notifyListeners();
-      }
     } catch (_) {}
-  }
-
-  Future<bool> connectToDevice(BluetoothDevice device) async {
-    if (_isSimulatorMode) return false;
-    try {
-      _connectionState = BleConnectionState.connecting;
-      notifyListeners();
-
-      await device.connect(autoConnect: false);
-      _connectedDevice = device;
-      _connectedDeviceName = device.platformName.isNotEmpty ? device.platformName : 'SWASTHAI ESP32';
-      _connectionState = BleConnectionState.connected;
-      notifyListeners();
-
-      await _discoverAndSubscribeServices(device);
-      return true;
-    } catch (e) {
-      debugPrint('BLE Connect error: $e');
-      _connectionState = BleConnectionState.disconnected;
-      _connectedDevice = null;
-      notifyListeners();
-      return false;
+    _scanSubscription?.cancel();
+    _scanSubscription = null;
+    if (_connectionState == BleConnectionState.scanning) {
+      _setConnectionState(BleConnectionState.disconnected);
     }
   }
 
-  Future<void> _discoverAndSubscribeServices(BluetoothDevice device) async {
+  @override
+  Future<void> connectToDevice(dynamic device) async {
+    _autoReconnectAttempts = 0;
+
+    BluetoothDevice? targetBleDevice;
+    if (device is BleDeviceModel && device.platformDevice is BluetoothDevice) {
+      targetBleDevice = device.platformDevice as BluetoothDevice;
+    } else if (device is BluetoothDevice) {
+      targetBleDevice = device;
+    }
+
+    if (targetBleDevice == null) {
+      _setConnectionState(
+        BleConnectionState.disconnected,
+        error: 'Invalid device selected.',
+      );
+      return;
+    }
+
     try {
-      final services = await device.discoverServices();
-      for (final service in services) {
-        if (service.uuid == Guid(swasthaiServiceUuid)) {
-          for (final char in service.characteristics) {
-            if (char.uuid == Guid(vitalsCharUuid)) {
-              await char.setNotifyValue(true);
-              char.lastValueStream.listen(_handleVitalsPacket);
-            } else if (char.uuid == Guid(airflowCharUuid)) {
-              await char.setNotifyValue(true);
-              char.lastValueStream.listen(_handleAirflowPacket);
-            } else if (char.uuid == Guid(acousticCharUuid)) {
-              await char.setNotifyValue(true);
-              char.lastValueStream.listen(_handleAcousticPacket);
-            }
-          }
+      await stopScan();
+      _setConnectionState(BleConnectionState.connecting);
+      _connectedDevice = targetBleDevice;
+      _connectedDeviceName = targetBleDevice.platformName.isNotEmpty
+          ? targetBleDevice.platformName
+          : BleConfig.targetDeviceName;
+
+      // Connect with configured timeout
+      await targetBleDevice.connect(timeout: BleConfig.connectTimeout, autoConnect: false);
+
+      // Listen for unexpected connection drops
+      _deviceStateSubscription?.cancel();
+      _deviceStateSubscription = targetBleDevice.connectionState.listen((state) {
+        if (state == BluetoothConnectionState.disconnected) {
+          debugPrint('[RealBleService] Device disconnected.');
+          _handleDisconnection();
+        }
+      });
+
+      // Request MTU negotiation (512 for optimal sensor packets)
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+        try {
+          await targetBleDevice.requestMtu(512);
+        } catch (_) {}
+      }
+
+      // Discover GATT Services
+      final services = await targetBleDevice.discoverServices();
+      await _setupCharacteristics(services);
+
+      _setConnectionState(BleConnectionState.connected);
+    } catch (e) {
+      debugPrint('[RealBleService] Connection error: $e');
+      _setConnectionState(
+        BleConnectionState.disconnected,
+        error: 'Failed to connect to SwasthAI device. Make sure the device is powered on.',
+      );
+    }
+  }
+
+  Future<void> _setupCharacteristics(List<BluetoothService> services) async {
+    for (final sub in _characteristicSubscriptions) {
+      await sub.cancel();
+    }
+    _characteristicSubscriptions.clear();
+
+    for (final s in services) {
+      for (final c in s.characteristics) {
+        final charUuidStr = c.uuid.toString().toLowerCase();
+
+        // 1. Vitals characteristic
+        if (charUuidStr == BleConfig.vitalsCharacteristicUuid.toLowerCase()) {
+          await c.setNotifyValue(true);
+          final sub = c.onValueReceived.listen((bytes) {
+            _onVitalsPacketReceived(bytes);
+          });
+          _characteristicSubscriptions.add(sub);
+        }
+
+        // 2. Airflow characteristic
+        if (charUuidStr == BleConfig.airflowCharacteristicUuid.toLowerCase()) {
+          await c.setNotifyValue(true);
+          final sub = c.onValueReceived.listen((bytes) {
+            _onAirflowPacketReceived(bytes);
+          });
+          _characteristicSubscriptions.add(sub);
+        }
+
+        // 3. Acoustic characteristic
+        if (charUuidStr == BleConfig.acousticCharacteristicUuid.toLowerCase()) {
+          await c.setNotifyValue(true);
+          final sub = c.onValueReceived.listen((bytes) {
+            _onAcousticPacketReceived(bytes);
+          });
+          _characteristicSubscriptions.add(sub);
         }
       }
-    } catch (e) {
-      debugPrint('Error subscribing to characteristics: $e');
     }
   }
 
-  void _handleVitalsPacket(List<int> bytes) {
-    if (bytes.isEmpty) return;
-    try {
-      // Packet format: ASCII JSON e.g. {"hr":76,"spo2":98,"ppg":520} or binary
-      final str = utf8.decode(bytes);
-      final json = jsonDecode(str) as Map<String, dynamic>;
-      final reading = VitalsReading(
-        heartRate: (json['hr'] as num?)?.toInt() ?? 75,
-        spo2: (json['spo2'] as num?)?.toInt() ?? 98,
-        ppgValue: (json['ppg'] as num?)?.toDouble() ?? 0.0,
-        timestamp: DateTime.now(),
+  void _onVitalsPacketReceived(List<int> bytes) {
+    final vitals = SensorDataParser.parseVitals(bytes);
+    if (vitals != null) {
+      _latestVitals = vitals;
+      _vitalsController.add(vitals);
+
+      final sensorReading = SensorDataParser.parseSensorReading(
+        bytes,
+        screeningId: 'live_ble_stream',
       );
-      _latestVitals = reading;
-      _vitalsController.add(reading);
-      notifyListeners();
-    } catch (e) {
-      // Fallback binary packet: [hr, spo2, ppgHigh, ppgLow]
-      if (bytes.length >= 4) {
-        final hr = bytes[0];
-        final spo2 = bytes[1];
-        final ppg = ((bytes[2] << 8) | bytes[3]).toDouble();
-        final reading = VitalsReading(
-          heartRate: hr,
-          spo2: spo2,
-          ppgValue: ppg,
-          timestamp: DateTime.now(),
-        );
-        _latestVitals = reading;
-        _vitalsController.add(reading);
-        notifyListeners();
+      if (sensorReading != null) {
+        _sensorReadingController.add(sensorReading);
       }
+      notifyListeners();
     }
   }
 
-  void _handleAirflowPacket(List<int> bytes) {
-    if (bytes.isEmpty) return;
-    try {
-      final str = utf8.decode(bytes);
-      final json = jsonDecode(str) as Map<String, dynamic>;
-      final point = SpirometryPoint(
-        timeSec: (json['t'] as num).toDouble(),
-        flowLps: (json['f'] as num).toDouble(),
-        volumeLiters: (json['v'] as num).toDouble(),
-      );
+  void _onAirflowPacketReceived(List<int> bytes) {
+    final point = SensorDataParser.parseSpirometryPoint(bytes);
+    if (point != null) {
       _currentBlowPoints.add(point);
       _spirometryController.add(point);
-    } catch (_) {}
+      notifyListeners();
+    }
   }
 
-  void _handleAcousticPacket(List<int> bytes) {
-    if (bytes.isEmpty) return;
-    try {
-      final str = utf8.decode(bytes);
-      final json = jsonDecode(str) as Map<String, dynamic>;
-      final reading = AcousticReading(
-        rmsAmplitude: (json['rms'] as num?)?.toDouble() ?? 0.0,
-        coughDetected: (json['cough'] as num?)?.toInt() == 1,
-        dominantFreqHz: (json['freq'] as num?)?.toDouble() ?? 0.0,
-        timestamp: DateTime.now(),
-      );
-      if (reading.coughDetected) {
+  void _onAcousticPacketReceived(List<int> bytes) {
+    final acoustic = SensorDataParser.parseAcousticReading(bytes);
+    if (acoustic != null) {
+      _latestAcoustic = acoustic;
+      if (acoustic.coughDetected) {
         _sessionCoughCount++;
       }
-      _latestAcoustic = reading;
-      _acousticController.add(reading);
+      _acousticController.add(acoustic);
       notifyListeners();
-    } catch (_) {}
+    }
   }
 
+  void _handleDisconnection() {
+    _cleanSubscriptions();
+    if (_autoReconnectAttempts < BleConfig.maxAutoReconnectAttempts && _connectedDevice != null) {
+      _autoReconnectAttempts++;
+      debugPrint('[RealBleService] Auto-reconnecting attempt $_autoReconnectAttempts...');
+      _setConnectionState(
+        BleConnectionState.connecting,
+        error: 'Reconnecting to device ($_autoReconnectAttempts/${BleConfig.maxAutoReconnectAttempts})...',
+      );
+      connectToDevice(_connectedDevice!);
+    } else {
+      _setConnectionState(
+        BleConnectionState.connectionLost,
+        error: 'Connection lost. Please reconnect the device.',
+      );
+    }
+  }
+
+  @override
   Future<void> disconnect() async {
+    _autoReconnectAttempts = BleConfig.maxAutoReconnectAttempts;
+    _cleanSubscriptions();
+
     if (_connectedDevice != null) {
       try {
         await _connectedDevice!.disconnect();
       } catch (_) {}
       _connectedDevice = null;
     }
-    _connectionState = BleConnectionState.disconnected;
+
     _connectedDeviceName = null;
+    _setConnectionState(BleConnectionState.disconnected);
+  }
+
+  void _cleanSubscriptions() {
+    for (final sub in _characteristicSubscriptions) {
+      sub.cancel();
+    }
+    _characteristicSubscriptions.clear();
+    _deviceStateSubscription?.cancel();
+    _deviceStateSubscription = null;
+  }
+
+  @override
+  void resetSessionCounters() {
+    _currentBlowPoints.clear();
+    _sessionCoughCount = 0;
     notifyListeners();
   }
 
-  // ==========================================
-  // SIMULATOR IMPLEMENTATION (OFFLINE DEMO)
-  // ==========================================
+  @override
+  SpirometrySummary computeSpirometrySummary() {
+    if (_currentBlowPoints.isEmpty) {
+      return SpirometrySummary.empty();
+    }
+
+    double peakFlowLps = 0.0;
+    double fvc = 0.0;
+    double fev1 = 0.0;
+    double fet = 0.0;
+
+    for (final p in _currentBlowPoints) {
+      if (p.flowLps > peakFlowLps) peakFlowLps = p.flowLps;
+      if (p.volumeLiters > fvc) fvc = p.volumeLiters;
+      if (p.timeSec <= 1.05 && p.volumeLiters > fev1) fev1 = p.volumeLiters;
+      if (p.timeSec > fet) fet = p.timeSec;
+    }
+
+    if (fev1 <= 0.0 && fvc > 0.0) {
+      fev1 = fvc * 0.82;
+    }
+
+    final ratio = fvc > 0.0 ? (fev1 / fvc) : 0.0;
+    final pefLpm = peakFlowLps * 60.0;
+
+    return SpirometrySummary(
+      fev1: fev1,
+      fvc: fvc,
+      fev1FvcRatio: ratio,
+      pefLpm: pefLpm,
+      forcedExpiratoryTimeSec: fet,
+    );
+  }
+
+  @override
+  void toggleSimulatorMode(bool enable) {
+    // Controlled via AppBleService
+  }
+
+  @override
+  void triggerSimulatorBlow({bool simulateObstruction = false}) {}
+
+  @override
+  void startSimulatedSpirometryBlow({bool simulateObstruction = false}) {}
+
+  @override
+  void triggerSimulatedCough() {}
+
+  @override
+  void dispose() {
+    _cleanSubscriptions();
+    _scanSubscription?.cancel();
+    _connectionStateController.close();
+    _sensorReadingController.close();
+    _vitalsController.close();
+    _spirometryController.close();
+    _acousticController.close();
+    super.dispose();
+  }
+}
+
+/// Mock BLE Service implementation simulating ESP32 hardware for testing and development.
+class MockBleService extends ChangeNotifier implements BleService {
+  BleConnectionState _connectionState = BleConnectionState.connected;
+  @override
+  BleConnectionState get connectionState => _connectionState;
+
+  @override
+  bool get isSimulatorMode => true;
+
+  String? _connectedDeviceName = 'SWASTHAI_ESP32 (Simulated)';
+  @override
+  String? get connectedDeviceName => _connectedDeviceName;
+
+  @override
+  String? get errorMessage => null;
+
+  final List<BleDeviceModel> _discoveredDevices = [
+    const BleDeviceModel(
+      id: 'MOCK_ESP32_01',
+      name: BleConfig.targetDeviceName,
+      rssi: -58,
+      isConnected: true,
+    ),
+  ];
+  @override
+  List<BleDeviceModel> get discoveredDevices => List.unmodifiable(_discoveredDevices);
+
+  VitalsReading _latestVitals = VitalsReading.initial();
+  @override
+  VitalsReading get latestVitals => _latestVitals;
+
+  AcousticReading _latestAcoustic = AcousticReading.initial();
+  @override
+  AcousticReading get latestAcoustic => _latestAcoustic;
+
+  final _connectionStateController = StreamController<BleConnectionState>.broadcast();
+  @override
+  Stream<BleConnectionState> get connectionStateStream => _connectionStateController.stream;
+
+  final _sensorReadingController = StreamController<SensorReading>.broadcast();
+  @override
+  Stream<SensorReading> get sensorReadingStream => _sensorReadingController.stream;
+
+  final _vitalsController = StreamController<VitalsReading>.broadcast();
+  @override
+  Stream<VitalsReading> get vitalsStream => _vitalsController.stream;
+
+  final _spirometryController = StreamController<SpirometryPoint>.broadcast();
+  @override
+  Stream<SpirometryPoint> get spirometryStream => _spirometryController.stream;
+
+  final _acousticController = StreamController<AcousticReading>.broadcast();
+  @override
+  Stream<AcousticReading> get acousticStream => _acousticController.stream;
+
+  final List<SpirometryPoint> _currentBlowPoints = [];
+  @override
+  List<SpirometryPoint> get currentBlowPoints => List.unmodifiable(_currentBlowPoints);
+
+  int _sessionCoughCount = 0;
+  @override
+  int get sessionCoughCount => _sessionCoughCount;
+
+  bool _isBlowing = false;
+  @override
+  bool get isBlowing => _isBlowing;
+
+  Timer? _vitalsSimTimer;
+  Timer? _acousticSimTimer;
+  Timer? _blowSimTimer;
+  double _simPhase = 0.0;
+
+  MockBleService({bool startConnected = true}) {
+    if (startConnected) {
+      _startSimulator();
+    } else {
+      _connectionState = BleConnectionState.disconnected;
+      _connectedDeviceName = null;
+    }
+  }
+
+  void startSimulator() {
+    _startSimulator();
+    notifyListeners();
+  }
 
   void _startSimulator() {
     _connectionState = BleConnectionState.connected;
-    _connectedDeviceName = 'SWASTHAI-ESP32 (Hardware Simulator)';
-    notifyListeners();
+    _connectedDeviceName = 'SWASTHAI_ESP32 (Simulated)';
+    _connectionStateController.add(_connectionState);
 
-    _simTime = 0.0;
     _vitalsSimTimer?.cancel();
-    _acousticSimTimer?.cancel();
+    _vitalsSimTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
+      if (_connectionState != BleConnectionState.connected) return;
 
-    // Stream realistic PPG wave at 25 Hz
-    _vitalsSimTimer = Timer.periodic(const Duration(milliseconds: 40), (timer) {
-      _simTime += 0.04;
-      final hr = 74 + (sin(_simTime * 0.5) * 3).round();
-      final spo2 = 98 - (sin(_simTime * 0.2) > 0.8 ? 1 : 0);
+      _simPhase += 0.25;
+      final ppg = (sin(_simPhase) * 0.4 + sin(_simPhase * 2) * 0.15 + 0.5).clamp(0.05, 0.95);
+      final hrJitter = (sin(_simPhase * 0.1) * 2).round();
+      final hr = (82 + hrJitter).clamp(78, 86);
 
-      // Realistic PPG pulse with systolic peak & dicrotic notch
-      final phase = (_simTime * (hr / 60.0)) % 1.0;
-      double ppg;
-      if (phase < 0.25) {
-        ppg = sin(phase / 0.25 * pi * 0.5); // Sharp systolic upstroke
-      } else if (phase < 0.45) {
-        ppg = cos((phase - 0.25) / 0.20 * pi * 0.5) * 0.7; // Fall towards notch
-      } else if (phase < 0.60) {
-        ppg = 0.35 + sin((phase - 0.45) / 0.15 * pi) * 0.2; // Dicrotic wave rebound
-      } else {
-        ppg = 0.35 * (1.0 - (phase - 0.60) / 0.40); // Diastolic decay
-      }
-      ppg += (Random().nextDouble() - 0.5) * 0.04; // Natural micro-noise
-
-      final reading = VitalsReading(
+      _latestVitals = VitalsReading(
         heartRate: hr,
-        spo2: spo2,
-        ppgValue: ppg.clamp(0.0, 1.0),
+        spo2: 97,
+        ppgValue: ppg,
         timestamp: DateTime.now(),
       );
-      _latestVitals = reading;
-      _vitalsController.add(reading);
+
+      _vitalsController.add(_latestVitals);
+
+      _sensorReadingController.add(
+        SensorReading(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          screeningId: 'simulator_stream',
+          timestamp: DateTime.now(),
+          spo2: 97,
+          heartRate: hr,
+          pressure: 1.84,
+          coughActivity: 0.72,
+        ),
+      );
+
       notifyListeners();
     });
 
-    // Stream ambient acoustic levels at 5 Hz
-    _acousticSimTimer = Timer.periodic(const Duration(milliseconds: 200), (timer) {
-      final baseRms = 0.06 + Random().nextDouble() * 0.05;
-      final reading = AcousticReading(
-        rmsAmplitude: baseRms,
+    _acousticSimTimer?.cancel();
+    _acousticSimTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (_connectionState != BleConnectionState.connected) return;
+      _latestAcoustic = AcousticReading(
+        rmsAmplitude: 0.12,
         coughDetected: false,
-        dominantFreqHz: 200 + Random().nextDouble() * 150,
+        dominantFreqHz: 280.0,
         timestamp: DateTime.now(),
       );
-      _latestAcoustic = reading;
-      _acousticController.add(reading);
-      notifyListeners();
+      _acousticController.add(_latestAcoustic);
     });
   }
 
   void _stopSimulator() {
     _vitalsSimTimer?.cancel();
+    _vitalsSimTimer = null;
     _acousticSimTimer?.cancel();
+    _acousticSimTimer = null;
     _blowSimTimer?.cancel();
-    _isBlowing = false;
+    _blowSimTimer = null;
   }
 
-  /// Triggers a simulated Forced Expiratory Spirometry test (e.g. forced exhalation into mouthpiece)
-  /// [simulateObstruction]: if true, produces an obstructive pattern (reduced FEV1 & scooped flow)
-  void startSimulatedSpirometryBlow({bool simulateObstruction = false}) {
-    if (_isBlowing) return;
-    _isBlowing = true;
-    _currentBlowPoints.clear();
+  @override
+  Future<void> startScan({Duration timeout = BleConfig.scanTimeout}) async {
+    _connectionState = BleConnectionState.scanning;
+    _connectionStateController.add(_connectionState);
     notifyListeners();
 
-    double blowTime = 0.0;
-    double currentVolume = 0.0;
-    const dt = 0.05; // 20 Hz curve sampling
+    await Future.delayed(const Duration(milliseconds: 1000));
+    _connectionState = BleConnectionState.disconnected;
+    _connectionStateController.add(_connectionState);
+    notifyListeners();
+  }
 
-    // Target parameters for standard healthy vs obstructive adult
-    final peakFlow = simulateObstruction ? 4.2 : 7.8; // L/s
-    final totalTargetVol = simulateObstruction ? 3.3 : 4.2; // L
-    final decayRate = simulateObstruction ? 0.75 : 1.45;
+  @override
+  Future<void> stopScan() async {
+    if (_connectionState == BleConnectionState.scanning) {
+      _connectionState = BleConnectionState.disconnected;
+      _connectionStateController.add(_connectionState);
+      notifyListeners();
+    }
+  }
 
-    _blowSimTimer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
-      blowTime += dt;
+  @override
+  Future<void> connectToDevice(dynamic device) async {
+    _connectionState = BleConnectionState.connecting;
+    _connectionStateController.add(_connectionState);
+    notifyListeners();
 
-      double flow;
-      if (blowTime < 0.15) {
-        // Fast blast up to PEF (Peak Expiratory Flow)
-        flow = (blowTime / 0.15) * peakFlow;
+    await Future.delayed(const Duration(milliseconds: 800));
+    _startSimulator();
+    notifyListeners();
+  }
+
+  @override
+  Future<void> disconnect() async {
+    _stopSimulator();
+    _connectionState = BleConnectionState.disconnected;
+    _connectedDeviceName = null;
+    _connectionStateController.add(_connectionState);
+    notifyListeners();
+  }
+
+  @override
+  void resetSessionCounters() {
+    _currentBlowPoints.clear();
+    _sessionCoughCount = 0;
+    notifyListeners();
+  }
+
+  @override
+  void triggerSimulatorBlow({bool simulateObstruction = false}) {
+    startSimulatedSpirometryBlow(simulateObstruction: simulateObstruction);
+  }
+
+  @override
+  void startSimulatedSpirometryBlow({bool simulateObstruction = false}) {
+    _blowSimTimer?.cancel();
+    _currentBlowPoints.clear();
+    _isBlowing = true;
+    notifyListeners();
+
+    double elapsed = 0.0;
+    double cumulativeVol = 0.0;
+    const intervalMs = 50;
+    final maxVol = simulateObstruction ? 2.40 : 3.85;
+    final peakFlow = simulateObstruction ? 3.8 : 7.5;
+    final decayRate = simulateObstruction ? 0.6 : 1.1;
+
+    _blowSimTimer = Timer.periodic(const Duration(milliseconds: intervalMs), (timer) {
+      elapsed += (intervalMs / 1000.0);
+
+      double flowLps = 0.0;
+      if (elapsed <= 0.2) {
+        flowLps = (elapsed / 0.2) * peakFlow;
       } else {
-        // Exhalation exponential curve
-        final tAfterPeak = blowTime - 0.15;
-        flow = peakFlow * exp(-decayRate * tAfterPeak);
+        flowLps = peakFlow * exp(-decayRate * (elapsed - 0.2));
       }
+      flowLps = max(0.0, flowLps);
 
-      flow += (Random().nextDouble() - 0.5) * 0.15;
-      if (flow < 0.0) flow = 0.0;
-
-      currentVolume += flow * dt;
-      if (currentVolume > totalTargetVol) {
-        currentVolume = totalTargetVol;
-        flow = 0.0;
-      }
+      cumulativeVol += flowLps * (intervalMs / 1000.0);
+      cumulativeVol = min(maxVol, cumulativeVol);
 
       final point = SpirometryPoint(
-        timeSec: blowTime,
-        flowLps: double.parse(flow.toStringAsFixed(2)),
-        volumeLiters: double.parse(currentVolume.toStringAsFixed(2)),
+        timeSec: elapsed,
+        flowLps: flowLps,
+        volumeLiters: cumulativeVol,
+        pressureKpa: (flowLps / peakFlow) * 1.84,
       );
 
       _currentBlowPoints.add(point);
       _spirometryController.add(point);
       notifyListeners();
 
-      // Stop blow test after 4.5 seconds or when flow stops
-      if (blowTime >= 4.5 || (blowTime > 1.0 && flow <= 0.05)) {
-        timer.cancel();
+      if (elapsed >= 4.5 || (elapsed > 1.0 && flowLps <= 0.05)) {
         _isBlowing = false;
+        timer.cancel();
         notifyListeners();
       }
     });
   }
 
-  /// Calculates the final summary indices from the current blow points
+  @override
+  void triggerSimulatedCough() {
+    _sessionCoughCount++;
+    _latestAcoustic = AcousticReading(
+      rmsAmplitude: 0.85,
+      coughDetected: true,
+      dominantFreqHz: 350.0,
+      timestamp: DateTime.now(),
+    );
+    _acousticController.add(_latestAcoustic);
+    notifyListeners();
+  }
+
+  @override
   SpirometrySummary computeSpirometrySummary() {
     if (_currentBlowPoints.isEmpty) {
       return SpirometrySummary.empty();
     }
 
-    double maxFlow = 0.0;
-    double fev1 = 0.0;
+    double peakFlowLps = 0.0;
     double fvc = 0.0;
-    double fet = _currentBlowPoints.last.timeSec;
+    double fev1 = 0.0;
+    double fet = 0.0;
 
-    for (final pt in _currentBlowPoints) {
-      if (pt.flowLps > maxFlow) {
-        maxFlow = pt.flowLps;
-      }
-      if (pt.timeSec <= 1.05 && pt.timeSec >= 0.95) {
-        fev1 = pt.volumeLiters;
-      }
-      if (pt.volumeLiters > fvc) {
-        fvc = pt.volumeLiters;
-      }
+    for (final p in _currentBlowPoints) {
+      if (p.flowLps > peakFlowLps) peakFlowLps = p.flowLps;
+      if (p.volumeLiters > fvc) fvc = p.volumeLiters;
+      if (p.timeSec <= 1.05 && p.volumeLiters > fev1) fev1 = p.volumeLiters;
+      if (p.timeSec > fet) fet = p.timeSec;
     }
 
-    if (fev1 == 0.0 && _currentBlowPoints.isNotEmpty) {
-      // Find closest point to 1.0s
-      final closest = _currentBlowPoints.reduce(
-        (a, b) => (a.timeSec - 1.0).abs() < (b.timeSec - 1.0).abs() ? a : b,
-      );
-      fev1 = closest.volumeLiters;
+    if (fev1 <= 0.0 && fvc > 0.0) {
+      fev1 = fvc * 0.82;
     }
 
-    // PEF in Liters per minute = maxFlow (L/s) * 60
-    final pefLpm = maxFlow * 60.0;
-    final ratio = fvc > 0.1 ? (fev1 / fvc) : 0.0;
+    final ratio = fvc > 0.0 ? (fev1 / fvc) : 0.0;
+    final pefLpm = peakFlowLps * 60.0;
 
     return SpirometrySummary(
-      fev1: double.parse(fev1.toStringAsFixed(2)),
-      fvc: double.parse(fvc.toStringAsFixed(2)),
-      fev1FvcRatio: double.parse(ratio.toStringAsFixed(2)),
-      pefLpm: double.parse(pefLpm.toStringAsFixed(1)),
-      forcedExpiratoryTimeSec: double.parse(fet.toStringAsFixed(2)),
+      fev1: fev1,
+      fvc: fvc,
+      fev1FvcRatio: ratio,
+      pefLpm: pefLpm,
+      forcedExpiratoryTimeSec: fet,
     );
   }
 
-  /// Simulates an acoustic cough trigger
-  void triggerSimulatedCough() {
-    _sessionCoughCount++;
-    final reading = AcousticReading(
-      rmsAmplitude: 0.88,
-      coughDetected: true,
-      dominantFreqHz: 450,
-      timestamp: DateTime.now(),
-    );
-    _latestAcoustic = reading;
-    _acousticController.add(reading);
-    notifyListeners();
-  }
-
-  void resetSessionCounters() {
-    _sessionCoughCount = 0;
-    _currentBlowPoints.clear();
-    notifyListeners();
+  @override
+  void toggleSimulatorMode(bool enable) {
+    // Controlled via AppBleService
   }
 
   @override
   void dispose() {
-    _vitalsSimTimer?.cancel();
-    _acousticSimTimer?.cancel();
-    _blowSimTimer?.cancel();
+    _stopSimulator();
+    _connectionStateController.close();
+    _sensorReadingController.close();
+    _vitalsController.close();
+    _spirometryController.close();
+    _acousticController.close();
+    super.dispose();
+  }
+}
+
+/// Unified BLE Service Manager that dynamically switches between RealBleService and MockBleService.
+class AppBleService extends ChangeNotifier implements BleService {
+  late RealBleService _realBleService;
+  late MockBleService _mockBleService;
+  bool _isSimulatorMode = true;
+
+  final _connectionStateController = StreamController<BleConnectionState>.broadcast();
+  final _sensorReadingController = StreamController<SensorReading>.broadcast();
+  final _vitalsController = StreamController<VitalsReading>.broadcast();
+  final _spirometryController = StreamController<SpirometryPoint>.broadcast();
+  final _acousticController = StreamController<AcousticReading>.broadcast();
+
+  final List<StreamSubscription> _delegatedSubs = [];
+
+  AppBleService({bool initialSimulatorMode = true}) {
+    _isSimulatorMode = initialSimulatorMode;
+    _realBleService = RealBleService();
+    _mockBleService = MockBleService(startConnected: initialSimulatorMode);
+
+    _realBleService.addListener(_onActiveServiceChanged);
+    _mockBleService.addListener(_onActiveServiceChanged);
+
+    _bindActiveStreams();
+  }
+
+  BleService get _activeService => _isSimulatorMode ? _mockBleService : _realBleService;
+
+  void _bindActiveStreams() {
+    for (final s in _delegatedSubs) {
+      s.cancel();
+    }
+    _delegatedSubs.clear();
+
+    _delegatedSubs.add(_activeService.connectionStateStream.listen(_connectionStateController.add));
+    _delegatedSubs.add(_activeService.sensorReadingStream.listen(_sensorReadingController.add));
+    _delegatedSubs.add(_activeService.vitalsStream.listen(_vitalsController.add));
+    _delegatedSubs.add(_activeService.spirometryStream.listen(_spirometryController.add));
+    _delegatedSubs.add(_activeService.acousticStream.listen(_acousticController.add));
+  }
+
+  void _onActiveServiceChanged() {
+    notifyListeners();
+  }
+
+  @override
+  bool get isSimulatorMode => _isSimulatorMode;
+
+  @override
+  BleConnectionState get connectionState => _activeService.connectionState;
+
+  @override
+  Stream<BleConnectionState> get connectionStateStream => _connectionStateController.stream;
+
+  @override
+  Stream<SensorReading> get sensorReadingStream => _sensorReadingController.stream;
+
+  @override
+  Stream<VitalsReading> get vitalsStream => _vitalsController.stream;
+
+  @override
+  Stream<SpirometryPoint> get spirometryStream => _spirometryController.stream;
+
+  @override
+  Stream<AcousticReading> get acousticStream => _acousticController.stream;
+
+  @override
+  VitalsReading get latestVitals => _activeService.latestVitals;
+
+  @override
+  AcousticReading get latestAcoustic => _activeService.latestAcoustic;
+
+  @override
+  List<SpirometryPoint> get currentBlowPoints => _activeService.currentBlowPoints;
+
+  @override
+  int get sessionCoughCount => _activeService.sessionCoughCount;
+
+  @override
+  bool get isBlowing => _activeService.isBlowing;
+
+  @override
+  String? get connectedDeviceName => _activeService.connectedDeviceName;
+
+  @override
+  String? get errorMessage => _activeService.errorMessage;
+
+  @override
+  List<BleDeviceModel> get discoveredDevices => _activeService.discoveredDevices;
+
+  @override
+  Future<void> startScan({Duration timeout = BleConfig.scanTimeout}) => _activeService.startScan(timeout: timeout);
+
+  @override
+  Future<void> stopScan() => _activeService.stopScan();
+
+  @override
+  Future<void> connectToDevice(dynamic device) => _activeService.connectToDevice(device);
+
+  @override
+  Future<void> disconnect() => _activeService.disconnect();
+
+  @override
+  void toggleSimulatorMode(bool enable) {
+    if (_isSimulatorMode == enable) return;
+    _isSimulatorMode = enable;
+    if (_isSimulatorMode) {
+      _realBleService.disconnect();
+      _mockBleService.startSimulator();
+    } else {
+      _mockBleService.disconnect();
+      _realBleService.disconnect();
+    }
+    _bindActiveStreams();
+    notifyListeners();
+  }
+
+  @override
+  void resetSessionCounters() => _activeService.resetSessionCounters();
+
+  @override
+  SpirometrySummary computeSpirometrySummary() => _activeService.computeSpirometrySummary();
+
+  @override
+  void triggerSimulatorBlow({bool simulateObstruction = false}) =>
+      _activeService.triggerSimulatorBlow(simulateObstruction: simulateObstruction);
+
+  @override
+  void startSimulatedSpirometryBlow({bool simulateObstruction = false}) =>
+      _activeService.startSimulatedSpirometryBlow(simulateObstruction: simulateObstruction);
+
+  @override
+  void triggerSimulatedCough() => _activeService.triggerSimulatedCough();
+
+  @override
+  void dispose() {
+    for (final s in _delegatedSubs) {
+      s.cancel();
+    }
+    _delegatedSubs.clear();
+    _realBleService.removeListener(_onActiveServiceChanged);
+    _mockBleService.removeListener(_onActiveServiceChanged);
+    _realBleService.dispose();
+    _mockBleService.dispose();
+    _connectionStateController.close();
+    _sensorReadingController.close();
     _vitalsController.close();
     _spirometryController.close();
     _acousticController.close();

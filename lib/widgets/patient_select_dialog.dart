@@ -49,7 +49,7 @@ class _PatientSelectDialogState extends State<PatientSelectDialog> {
 
     final newPatient = Patient(
       id: const Uuid().v4(),
-      name: _nameController.text.trim(),
+      fullName: _nameController.text.trim(),
       age: int.tryParse(_ageController.text) ?? 40,
       gender: _selectedGender,
       heightCm: double.tryParse(_heightController.text) ?? 165.0,

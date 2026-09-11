@@ -20,7 +20,6 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDB(String filePath) async {
-    // Enable FFI on desktop platforms (Windows, Linux, macOS) or pure Dart VM
     if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
       sqfliteFfiInit();
       databaseFactory = databaseFactoryFfi;
@@ -31,7 +30,6 @@ class DatabaseHelper {
       try {
         final appDocDir = await getApplicationDocumentsDirectory();
         path = join(appDocDir.path, 'SwasthaiData', filePath);
-        // Ensure directory exists
         final dir = Directory(join(appDocDir.path, 'SwasthaiData'));
         if (!await dir.exists()) {
           await dir.create(recursive: true);
@@ -46,8 +44,9 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createDB,
+      onUpgrade: _onUpgradeDB,
     );
   }
 
@@ -55,14 +54,19 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE patients (
         id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
+        full_name TEXT NOT NULL,
+        name TEXT,
         age INTEGER NOT NULL,
         gender TEXT NOT NULL,
-        height_cm REAL NOT NULL,
-        weight_kg REAL NOT NULL,
+        village TEXT,
+        occupation TEXT,
+        smoking_status TEXT,
+        height_cm REAL,
+        weight_kg REAL,
         phone TEXT,
         medical_history TEXT,
-        created_at TEXT NOT NULL
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
       )
     ''');
 
@@ -70,6 +74,9 @@ class DatabaseHelper {
       CREATE TABLE screenings (
         id TEXT PRIMARY KEY,
         patient_id TEXT NOT NULL,
+        started_at TEXT NOT NULL,
+        completed_at TEXT,
+        status TEXT NOT NULL,
         timestamp TEXT NOT NULL,
         heart_rate INTEGER,
         spo2 INTEGER,
@@ -81,12 +88,31 @@ class DatabaseHelper {
         symptom_score INTEGER,
         risk_level TEXT,
         risk_score INTEGER,
+        risk_category TEXT,
         clinical_pattern TEXT,
         clinical_notes TEXT,
         full_payload_json TEXT,
         FOREIGN KEY (patient_id) REFERENCES patients (id) ON DELETE CASCADE
       )
     ''');
+  }
+
+  Future<void> _onUpgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      try {
+        await db.execute('ALTER TABLE patients ADD COLUMN full_name TEXT');
+        await db.execute('ALTER TABLE patients ADD COLUMN village TEXT');
+        await db.execute('ALTER TABLE patients ADD COLUMN occupation TEXT');
+        await db.execute('ALTER TABLE patients ADD COLUMN smoking_status TEXT');
+        await db.execute('ALTER TABLE patients ADD COLUMN updated_at TEXT');
+      } catch (_) {}
+      try {
+        await db.execute('ALTER TABLE screenings ADD COLUMN started_at TEXT');
+        await db.execute('ALTER TABLE screenings ADD COLUMN completed_at TEXT');
+        await db.execute('ALTER TABLE screenings ADD COLUMN status TEXT');
+        await db.execute('ALTER TABLE screenings ADD COLUMN risk_category TEXT');
+      } catch (_) {}
+    }
   }
 
   // --- Patient Operations ---
@@ -132,11 +158,12 @@ class DatabaseHelper {
 
   Future<List<Patient>> searchPatients(String query) async {
     final db = await database;
+    final q = '%${query.toLowerCase()}%';
     final maps = await db.query(
       'patients',
-      where: 'name LIKE ? OR phone LIKE ?',
-      whereArgs: ['%$query%', '%$query%'],
-      orderBy: 'name ASC',
+      where: 'LOWER(full_name) LIKE ? OR LOWER(name) LIKE ? OR LOWER(village) LIKE ? OR LOWER(occupation) LIKE ?',
+      whereArgs: [q, q, q, q],
+      orderBy: 'full_name ASC',
     );
     return maps.map((m) => Patient.fromMap(m)).toList();
   }
@@ -152,9 +179,29 @@ class DatabaseHelper {
     );
   }
 
+  Future<int> updateScreening(ScreeningSession session) async {
+    final db = await database;
+    return await db.update(
+      'screenings',
+      session.toDbMap(),
+      where: 'id = ?',
+      whereArgs: [session.id],
+    );
+  }
+
   Future<int> deleteScreening(String id) async {
     final db = await database;
     return await db.delete('screenings', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<ScreeningSession?> getScreeningById(String id) async {
+    final db = await database;
+    final maps = await db.query('screenings', where: 'id = ?', whereArgs: [id]);
+    if (maps.isNotEmpty) {
+      final patient = await getPatient(maps.first['patient_id'] as String);
+      return ScreeningSession.fromDbMap(maps.first, attachedPatient: patient);
+    }
+    return null;
   }
 
   Future<List<ScreeningSession>> getScreeningsForPatient(String patientId) async {
@@ -192,19 +239,19 @@ class DatabaseHelper {
         ) ??
         0;
     final lowRisk = Sqflite.firstIntValue(
-          await db.rawQuery('SELECT COUNT(*) FROM screenings WHERE risk_level = ?', ['low']),
+          await db.rawQuery('SELECT COUNT(*) FROM screenings WHERE risk_level LIKE ? OR risk_category LIKE ?', ['%low%', '%low%']),
         ) ??
         0;
     final modRisk = Sqflite.firstIntValue(
-          await db.rawQuery('SELECT COUNT(*) FROM screenings WHERE risk_level = ?', ['moderate']),
+          await db.rawQuery('SELECT COUNT(*) FROM screenings WHERE risk_level LIKE ? OR risk_category LIKE ?', ['%moderate%', '%moderate%']),
         ) ??
         0;
     final highRisk = Sqflite.firstIntValue(
-          await db.rawQuery('SELECT COUNT(*) FROM screenings WHERE risk_level = ?', ['high']),
+          await db.rawQuery('SELECT COUNT(*) FROM screenings WHERE risk_level LIKE ? OR risk_category LIKE ?', ['%high%', '%high%']),
         ) ??
         0;
     final critRisk = Sqflite.firstIntValue(
-          await db.rawQuery('SELECT COUNT(*) FROM screenings WHERE risk_level = ?', ['critical']),
+          await db.rawQuery('SELECT COUNT(*) FROM screenings WHERE risk_level LIKE ? OR risk_category LIKE ?', ['%critical%', '%critical%']),
         ) ??
         0;
 

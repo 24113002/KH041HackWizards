@@ -1,27 +1,26 @@
 class QuestionnaireResponse {
-  // mMRC Dyspnea scale (0: None, 1: Strenuous exercise, 2: Hurrying on level, 3: Stops after 100m, 4: Housebound)
-  final int mmrcDyspneaGrade;
+  final String screeningId;
 
-  // Cough frequency (0: None, 1: Occasional, 2: Daily, 3: Chronic >3 weeks)
-  final int coughFrequency;
+  // 1. Current/former smoking
+  final String smokingStatus; // Non-smoker, Former smoker, Current smoker
+  // 2. Years smoked
+  final double yearsSmoked;
+  // 3. Cigarettes per day
+  final int cigarettesPerDay;
+  // 4. Biomass smoke exposure
+  final String biomassExposure; // None, Moderate, High/Daily
+  // 5. Breathlessness (mMRC grade 0-4)
+  final int breathlessness;
+  // 6. Chronic cough
+  final bool chronicCough;
+  // 7. Phlegm / sputum
+  final bool phlegm;
+  // 8. Wheezing
+  final bool wheezing;
+  // 9. Recurrent respiratory problems
+  final bool recurrentRespiratoryProblems;
 
-  // Sputum (0: None, 1: Clear/Mucoid, 2: Purulent/Yellow-Green, 3: Hemoptysis/Blood-tinged)
-  final int sputumType;
-
-  // Wheezing episodes (0: Never, 1: Triggered by cold/dust, 2: Recurrent/Frequent)
-  final int wheezeSeverity;
-
-  // Chest tightness/discomfort (0: None, 1: Exertional, 2: Rest/Severe)
-  final int chestDiscomfort;
-
-  // Smoking history (0: Non-smoker, 1: Former smoker, 2: Current smoker)
-  final int smokingStatus;
-  final double packYears;
-
-  // Biomass / Chulha / Indoor wood smoke exposure (0: None, 1: Moderate, 2: High/Daily)
-  final int biomassExposure;
-
-  // Comorbidities
+  // Additional comorbidity flags
   final bool hasAsthma;
   final bool hasCopd;
   final bool hasHypertension;
@@ -30,63 +29,118 @@ class QuestionnaireResponse {
   final bool hasTbHistory;
 
   const QuestionnaireResponse({
-    this.mmrcDyspneaGrade = 0,
-    this.coughFrequency = 0,
-    this.sputumType = 0,
-    this.wheezeSeverity = 0,
-    this.chestDiscomfort = 0,
-    this.smokingStatus = 0,
-    this.packYears = 0.0,
-    this.biomassExposure = 0,
+    this.screeningId = '',
+    dynamic smokingStatus = 'Non-smoker',
+    this.yearsSmoked = 0.0,
+    this.cigarettesPerDay = 0,
+    dynamic biomassExposure = 'None',
+    int? breathlessness,
+    int? mmrcDyspneaGrade,
+    bool? chronicCough,
+    int? coughFrequency,
+    bool? phlegm,
+    int? sputumType,
+    bool? wheezing,
+    int? wheezeSeverity,
+    bool? recurrentRespiratoryProblems,
+    int? chestDiscomfort,
+    double? packYears,
     this.hasAsthma = false,
     this.hasCopd = false,
     this.hasHypertension = false,
     this.hasDiabetes = false,
     this.hasHeartDisease = false,
     this.hasTbHistory = false,
-  });
+  })  : smokingStatus = (smokingStatus == 2 || smokingStatus == 'Current smoker')
+            ? 'Current smoker'
+            : (smokingStatus == 1 || smokingStatus == 'Former smoker')
+                ? 'Former smoker'
+                : 'Non-smoker',
+        biomassExposure = (biomassExposure == 2 || biomassExposure == 'High/Daily')
+            ? 'High/Daily'
+            : (biomassExposure == 1 || biomassExposure == 'Moderate')
+                ? 'Moderate'
+                : 'None',
+        breathlessness = breathlessness ?? mmrcDyspneaGrade ?? 0,
+        chronicCough = chronicCough ?? (coughFrequency != null && coughFrequency > 0),
+        phlegm = phlegm ?? (sputumType != null && sputumType > 0),
+        wheezing = wheezing ?? (wheezeSeverity != null && wheezeSeverity > 0),
+        recurrentRespiratoryProblems = recurrentRespiratoryProblems ?? (chestDiscomfort != null && chestDiscomfort > 0);
 
-  /// Computes a normalized clinical symptom burden score (0 to 30)
+  // --- Backward Compatibility Aliases ---
+  int get mmrcDyspneaGrade => breathlessness;
+  int get coughFrequency => chronicCough ? 2 : 0;
+  int get sputumType => phlegm ? 1 : 0;
+  int get wheezeSeverity => wheezing ? 2 : 0;
+  int get chestDiscomfort => recurrentRespiratoryProblems ? 1 : 0;
+  int get smokingStatusCode => smokingStatus == 'Current smoker' ? 2 : (smokingStatus == 'Former smoker' ? 1 : 0);
+  int get biomassExposureLevel => biomassExposure == 'High/Daily' ? 2 : (biomassExposure == 'Moderate' ? 1 : 0);
+  double get packYears => (yearsSmoked * cigarettesPerDay) / 20.0;
+
   int get symptomScore {
     int score = 0;
-    // Dyspnea (weight up to 8)
-    score += mmrcDyspneaGrade * 2;
-    // Cough (0-3)
-    score += coughFrequency;
-    // Sputum (0-3)
-    score += sputumType;
-    // Wheeze (0-4)
-    score += wheezeSeverity * 2;
-    // Chest discomfort (0-4)
-    score += chestDiscomfort * 2;
-    // Smoking impact
-    if (smokingStatus == 2) {
-      score += (packYears > 10) ? 3 : 2;
-    } else if (smokingStatus == 1) {
-      score += 1;
+    score += breathlessness * 2;
+    if (chronicCough) score += 2;
+    if (phlegm) score += 2;
+    if (wheezing) score += 3;
+    if (recurrentRespiratoryProblems) score += 3;
+    if (smokingStatus == 'Current smoker') {
+      score += (yearsSmoked > 10) ? 4 : 2;
     }
-    // Biomass exposure
-    score += biomassExposure * 2;
-    // Comorbidities
-    if (hasAsthma) score += 2;
-    if (hasCopd) score += 3;
-    if (hasHeartDisease) score += 3;
-    if (hasHypertension) score += 1;
-    if (hasTbHistory) score += 2;
-
+    if (biomassExposure == 'High/Daily') score += 3;
     return score;
+  }
+
+  QuestionnaireResponse copyWith({
+    String? screeningId,
+    dynamic smokingStatus,
+    double? yearsSmoked,
+    int? cigarettesPerDay,
+    dynamic biomassExposure,
+    int? breathlessness,
+    bool? chronicCough,
+    bool? phlegm,
+    bool? wheezing,
+    bool? recurrentRespiratoryProblems,
+    bool? hasAsthma,
+    bool? hasCopd,
+    bool? hasHypertension,
+    bool? hasDiabetes,
+    bool? hasHeartDisease,
+    bool? hasTbHistory,
+  }) {
+    return QuestionnaireResponse(
+      screeningId: screeningId ?? this.screeningId,
+      smokingStatus: smokingStatus ?? this.smokingStatus,
+      yearsSmoked: yearsSmoked ?? this.yearsSmoked,
+      cigarettesPerDay: cigarettesPerDay ?? this.cigarettesPerDay,
+      biomassExposure: biomassExposure ?? this.biomassExposure,
+      breathlessness: breathlessness ?? this.breathlessness,
+      chronicCough: chronicCough ?? this.chronicCough,
+      phlegm: phlegm ?? this.phlegm,
+      wheezing: wheezing ?? this.wheezing,
+      recurrentRespiratoryProblems: recurrentRespiratoryProblems ?? this.recurrentRespiratoryProblems,
+      hasAsthma: hasAsthma ?? this.hasAsthma,
+      hasCopd: hasCopd ?? this.hasCopd,
+      hasHypertension: hasHypertension ?? this.hasHypertension,
+      hasDiabetes: hasDiabetes ?? this.hasDiabetes,
+      hasHeartDisease: hasHeartDisease ?? this.hasHeartDisease,
+      hasTbHistory: hasTbHistory ?? this.hasTbHistory,
+    );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'mmrc_dyspnea_grade': mmrcDyspneaGrade,
-      'cough_frequency': coughFrequency,
-      'sputum_type': sputumType,
-      'wheeze_severity': wheezeSeverity,
-      'chest_discomfort': chestDiscomfort,
+      'screening_id': screeningId,
       'smoking_status': smokingStatus,
-      'pack_years': packYears,
+      'years_smoked': yearsSmoked,
+      'cigarettes_per_day': cigarettesPerDay,
       'biomass_exposure': biomassExposure,
+      'breathlessness': breathlessness,
+      'chronic_cough': chronicCough ? 1 : 0,
+      'phlegm': phlegm ? 1 : 0,
+      'wheezing': wheezing ? 1 : 0,
+      'recurrent_respiratory_problems': recurrentRespiratoryProblems ? 1 : 0,
       'has_asthma': hasAsthma ? 1 : 0,
       'has_copd': hasCopd ? 1 : 0,
       'has_hypertension': hasHypertension ? 1 : 0,
@@ -97,15 +151,19 @@ class QuestionnaireResponse {
   }
 
   factory QuestionnaireResponse.fromMap(Map<String, dynamic> map) {
+    final sStatus = (map['smoking_status'] as String?) ?? 'Non-smoker';
+    final bExposure = (map['biomass_exposure'] as String?) ?? 'None';
     return QuestionnaireResponse(
-      mmrcDyspneaGrade: (map['mmrc_dyspnea_grade'] as num?)?.toInt() ?? 0,
-      coughFrequency: (map['cough_frequency'] as num?)?.toInt() ?? 0,
-      sputumType: (map['sputum_type'] as num?)?.toInt() ?? 0,
-      wheezeSeverity: (map['wheeze_severity'] as num?)?.toInt() ?? 0,
-      chestDiscomfort: (map['chest_discomfort'] as num?)?.toInt() ?? 0,
-      smokingStatus: (map['smoking_status'] as num?)?.toInt() ?? 0,
-      packYears: (map['pack_years'] as num?)?.toDouble() ?? 0.0,
-      biomassExposure: (map['biomass_exposure'] as num?)?.toInt() ?? 0,
+      screeningId: (map['screening_id'] as String?) ?? '',
+      smokingStatus: sStatus,
+      yearsSmoked: (map['years_smoked'] as num?)?.toDouble() ?? 0.0,
+      cigarettesPerDay: (map['cigarettes_per_day'] as num?)?.toInt() ?? 0,
+      biomassExposure: bExposure,
+      breathlessness: (map['breathlessness'] as num?)?.toInt() ?? (map['mmrc_dyspnea_grade'] as num?)?.toInt() ?? 0,
+      chronicCough: (map['chronic_cough'] as num?)?.toInt() == 1 || ((map['cough_frequency'] as num?)?.toInt() ?? 0) > 0,
+      phlegm: (map['phlegm'] as num?)?.toInt() == 1 || ((map['sputum_type'] as num?)?.toInt() ?? 0) > 0,
+      wheezing: (map['wheezing'] as num?)?.toInt() == 1 || ((map['wheeze_severity'] as num?)?.toInt() ?? 0) > 0,
+      recurrentRespiratoryProblems: (map['recurrent_respiratory_problems'] as num?)?.toInt() == 1 || ((map['chest_discomfort'] as num?)?.toInt() ?? 0) > 0,
       hasAsthma: (map['has_asthma'] as num?)?.toInt() == 1,
       hasCopd: (map['has_copd'] as num?)?.toInt() == 1,
       hasHypertension: (map['has_hypertension'] as num?)?.toInt() == 1,

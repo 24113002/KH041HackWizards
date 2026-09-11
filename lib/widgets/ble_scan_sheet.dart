@@ -107,7 +107,7 @@ class _BleScanSheetState extends State<BleScanSheet> {
                 Text(
                   ble.connectionState == BleConnectionState.scanning
                       ? 'Scanning for devices...'
-                      : 'Found ${ble.scanResults.length} devices',
+                      : 'Found ${ble.discoveredDevices.length} devices',
                   style: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
                 ),
                 if (ble.connectionState == BleConnectionState.scanning)
@@ -127,14 +127,15 @@ class _BleScanSheetState extends State<BleScanSheet> {
             const SizedBox(height: 12),
             ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 250),
-              child: ble.scanResults.isEmpty
+              child: ble.discoveredDevices.isEmpty
                   ? Center(
                       child: Padding(
                         padding: const EdgeInsets.all(24.0),
                         child: Text(
                           ble.connectionState == BleConnectionState.scanning
                               ? 'Searching for nearby ESP32 devices...'
-                              : 'No SWASTHAI devices found. Make sure Bluetooth is enabled and the ESP32 is powered.',
+                              : (ble.errorMessage ??
+                                  'No SWASTHAI devices found. Make sure Bluetooth is enabled and the ESP32 is powered.'),
                           textAlign: TextAlign.center,
                           style: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
                         ),
@@ -142,14 +143,11 @@ class _BleScanSheetState extends State<BleScanSheet> {
                     )
                   : ListView.builder(
                       shrinkWrap: true,
-                      itemCount: ble.scanResults.length,
+                      itemCount: ble.discoveredDevices.length,
                       itemBuilder: (ctx, idx) {
-                        final res = ble.scanResults[idx];
-                        final name = res.device.platformName.isNotEmpty
-                            ? res.device.platformName
-                            : res.advertisementData.advName;
-                        final isSwasthai = name.toUpperCase().contains('SWASTHAI') ||
-                            name.toUpperCase().contains('ESP32');
+                        final dev = ble.discoveredDevices[idx];
+                        final isSwasthai = dev.name.toUpperCase().contains('SWASTHAI') ||
+                            dev.name.toUpperCase().contains('ESP32');
 
                         return ListTile(
                           contentPadding: EdgeInsets.zero,
@@ -162,29 +160,30 @@ class _BleScanSheetState extends State<BleScanSheet> {
                             ),
                           ),
                           title: Text(
-                            name.isNotEmpty ? name : 'Unknown Device',
+                            dev.name,
                             style: TextStyle(
                               color: isSwasthai ? AppTheme.textLight : AppTheme.textMuted,
                               fontWeight: isSwasthai ? FontWeight.bold : FontWeight.normal,
                             ),
                           ),
                           subtitle: Text(
-                            '${res.device.remoteId} • RSSI: ${res.rssi} dBm',
+                            '${dev.id} • Signal: ${dev.signalStrengthDescription} (${dev.rssi} dBm)',
                             style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
                           ),
                           trailing: ElevatedButton(
                             onPressed: () async {
-                              final ok = await ble.connectToDevice(res.device);
+                              await ble.connectToDevice(dev);
                               if (context.mounted) {
                                 Navigator.pop(context);
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text(ok ? 'Connected to ${res.device.platformName}!' : 'Connection failed.'),
+                                    content: Text('Connecting to ${dev.name}...'),
                                   ),
                                 );
                               }
                             },
                             style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryTeal,
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                             ),
                             child: const Text('Connect', style: TextStyle(fontSize: 12)),

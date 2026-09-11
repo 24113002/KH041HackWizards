@@ -195,10 +195,10 @@ class RiskAssessmentEngine {
     }
 
     // Risk Factor Flags (Smoking & Biomass)
-    if (questionnaire.smokingStatus == 2) {
+    if (questionnaire.smokingStatus == 'Current smoker' || questionnaire.smokingStatusCode == 2) {
       recommendations.add('Strongly advise smoking cessation counseling and consider pharmacological nicotine replacement support.');
     }
-    if (questionnaire.biomassExposure >= 2) {
+    if (questionnaire.biomassExposure == 'High/Daily' || questionnaire.biomassExposureLevel >= 2) {
       recommendations.add('Advise minimization of indoor biomass/chulha smoke exposure with improved home ventilation.');
     }
 
@@ -243,7 +243,9 @@ class RiskAssessmentEngine {
     }
 
     return RiskResult(
+      riskScore: normalizedScore,
       overallScore: normalizedScore,
+      riskCategory: riskLevel.label,
       riskLevel: riskLevel,
       clinicalPattern: pattern,
       findings: findings,

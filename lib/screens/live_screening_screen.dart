@@ -133,12 +133,41 @@ class _LiveScreeningScreenState extends State<LiveScreeningScreen> with SingleTi
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Column(
         children: [
-          _buildVitalsTab(ble),
-          _buildSpirometryTab(ble),
-          _buildAcousticTab(ble),
+          if (ble.connectionState == BleConnectionState.connectionLost ||
+              ble.connectionState == BleConnectionState.disconnected)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              color: AppTheme.riskCritical.withAlpha(40),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning_amber_rounded, size: 18, color: AppTheme.riskCritical),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Device connection lost. Live sensor data collection is paused.',
+                      style: TextStyle(color: AppTheme.textLight, fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => ble.startScan(),
+                    child: const Text('Reconnect', style: TextStyle(color: AppTheme.primaryTeal, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildVitalsTab(ble),
+                _buildSpirometryTab(ble),
+                _buildAcousticTab(ble),
+              ],
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: Container(

@@ -43,26 +43,36 @@ class SpirometryPoint {
   final double timeSec;
   final double flowLps; // Flow in Liters per second
   final double volumeLiters; // Integrated exhalation volume
+  final double pressureKpa; // Airflow pressure in kPa
 
   const SpirometryPoint({
-    required this.timeSec,
+    double? timeSec,
+    double? timeSeconds,
     required this.flowLps,
-    required this.volumeLiters,
-  });
+    double? volumeLiters,
+    double? volumeL,
+    this.pressureKpa = 0.0,
+  })  : timeSec = timeSec ?? timeSeconds ?? 0.0,
+        volumeLiters = volumeLiters ?? volumeL ?? 0.0;
+
+  double get timeSeconds => timeSec;
+  double get volumeL => volumeLiters;
 
   Map<String, dynamic> toMap() {
     return {
       'time_sec': timeSec,
       'flow_lps': flowLps,
       'volume_liters': volumeLiters,
+      'pressure_kpa': pressureKpa,
     };
   }
 
   factory SpirometryPoint.fromMap(Map<String, dynamic> map) {
     return SpirometryPoint(
-      timeSec: (map['time_sec'] as num).toDouble(),
-      flowLps: (map['flow_lps'] as num).toDouble(),
-      volumeLiters: (map['volume_liters'] as num).toDouble(),
+      timeSec: (map['time_sec'] as num?)?.toDouble() ?? (map['time_seconds'] as num?)?.toDouble() ?? 0.0,
+      flowLps: (map['flow_lps'] as num?)?.toDouble() ?? 0.0,
+      volumeLiters: (map['volume_liters'] as num?)?.toDouble() ?? (map['volume_l'] as num?)?.toDouble() ?? 0.0,
+      pressureKpa: (map['pressure_kpa'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }
@@ -119,12 +129,16 @@ class AcousticReading {
   final double dominantFreqHz;
   final DateTime timestamp;
 
-  const AcousticReading({
+  AcousticReading({
     required this.rmsAmplitude,
-    required this.coughDetected,
-    required this.dominantFreqHz,
-    required this.timestamp,
-  });
+    bool? coughDetected,
+    bool? isCoughTriggered,
+    this.dominantFreqHz = 0.0,
+    DateTime? timestamp,
+  })  : coughDetected = coughDetected ?? isCoughTriggered ?? false,
+        timestamp = timestamp ?? DateTime.now();
+
+  bool get isCoughTriggered => coughDetected;
 
   factory AcousticReading.initial() {
     return AcousticReading(

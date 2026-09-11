@@ -3,9 +3,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'controllers/current_screening_controller.dart';
+import 'controllers/patient_provider.dart';
+import 'controllers/screening_history_controller.dart';
 import 'data/database_helper.dart';
+import 'repositories/patient_repository.dart';
+import 'repositories/screening_repository.dart';
 import 'screens/home_screen.dart';
 import 'services/ble_service.dart';
+import 'services/sensor_service.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
@@ -24,17 +30,43 @@ void main() async {
     debugPrint('Database init warning: $e');
   }
 
-  runApp(const SwasthaiApp());
+  // Instantiate repositories & services
+  final patientRepo = LocalPatientRepository();
+  final screeningRepo = LocalScreeningRepository();
+  final sensorService = MockSensorService();
+
+  runApp(
+    SwasthaiApp(
+      patientRepository: patientRepo,
+      screeningRepository: screeningRepo,
+      sensorService: sensorService,
+    ),
+  );
 }
 
 class SwasthaiApp extends StatelessWidget {
-  const SwasthaiApp({super.key});
+  final PatientRepository patientRepository;
+  final ScreeningRepository screeningRepository;
+  final SensorService sensorService;
+
+  const SwasthaiApp({
+    super.key,
+    required this.patientRepository,
+    required this.screeningRepository,
+    required this.sensorService,
+  });
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => BleService()),
+        Provider<PatientRepository>.value(value: patientRepository),
+        Provider<ScreeningRepository>.value(value: screeningRepository),
+        Provider<SensorService>.value(value: sensorService),
+        ChangeNotifierProvider<BleService>(create: (_) => AppBleService()),
+        ChangeNotifierProvider(create: (_) => PatientProvider(repository: patientRepository)),
+        ChangeNotifierProvider(create: (_) => CurrentScreeningController()),
+        ChangeNotifierProvider(create: (_) => ScreeningHistoryController(repository: screeningRepository)),
       ],
       child: MaterialApp(
         title: 'SWASTHAI',
