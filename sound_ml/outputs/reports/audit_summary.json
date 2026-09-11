@@ -1,0 +1,62 @@
+{
+  "labelled": {
+    "total_files": 336,
+    "total_subjects": 112,
+    "sample_rates": {
+      "4000": 336
+    },
+    "channels": {
+      "1": 336
+    },
+    "durations": {
+      "min": 5.0,
+      "max": 30.0,
+      "mean": 17.39911904761905
+    },
+    "diagnoses_distribution": {
+      "N": 35,
+      "Asthma": 17,
+      "Lung Fibrosis": 4,
+      "COPD": 8,
+      "Heart Failure": 3,
+      "heart failure": 15,
+      "pneumonia": 5,
+      "Asthma and lung fibrosis": 1,
+      "BRON": 3,
+      "copd": 1,
+      "asthma": 15,
+      "Heart Failure + Lung Fibrosis": 1,
+      "Heart Failure + COPD": 2,
+      "Plueral Effusion": 2
+    },
+    "sound_types_distribution": {
+      "N": 35,
+      "E W": 39,
+      "Crep": 23,
+      "C": 7,
+      "I E W": 2,
+      "I C": 1,
+      "I C E W": 2,
+      "Bronchial": 1,
+      "I C B": 2
+    }
+  },
+  "unlabelled": {
+    "total_files": 920,
+    "total_subjects": 126,
+    "total_hours": 5.492508434114386,
+    "sample_rates": {
+      "44100": 824,
+      "4000": 90,
+      "10000": 6
+    },
+    "channels": {
+      "1": 920
+    },
+    "durations": {
+      "min": 7.856,
+      "max": 86.2,
+      "mean": 21.49242430740412
+    }
+  }
+}

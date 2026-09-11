@@ -1,0 +1,12 @@
+{
+  "best_value_f1": 0.8372093023255814,
+  "best_params": {
+    "base_filters": 16,
+    "n_blocks": 4,
+    "dropout": 0.2,
+    "lr": 0.001938906063902505,
+    "weight_decay": 2.354665744937071e-05,
+    "batch_size": 32
+  },
+  "n_trials": 8
+}

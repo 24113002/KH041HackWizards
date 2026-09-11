@@ -1,0 +1,2821 @@
+{
+  "metadata": {
+    "total_subjects": 112,
+    "train_subjects": 78,
+    "val_subjects": 17,
+    "test_subjects": 17,
+    "seed": 42
+  },
+  "train_patient_ids": [
+    "P10",
+    "P100",
+    "P101",
+    "P103",
+    "P104",
+    "P105",
+    "P106",
+    "P107",
+    "P11",
+    "P111",
+    "P12",
+    "P16",
+    "P17",
+    "P18",
+    "P19",
+    "P2",
+    "P21",
+    "P22",
+    "P23",
+    "P24",
+    "P26",
+    "P27",
+    "P29",
+    "P3",
+    "P30",
+    "P31",
+    "P33",
+    "P34",
+    "P35",
+    "P39",
+    "P4",
+    "P40",
+    "P41",
+    "P43",
+    "P44",
+    "P48",
+    "P49",
+    "P5",
+    "P50",
+    "P51",
+    "P52",
+    "P54",
+    "P55",
+    "P56",
+    "P57",
+    "P59",
+    "P6",
+    "P60",
+    "P61",
+    "P64",
+    "P65",
+    "P66",
+    "P67",
+    "P69",
+    "P7",
+    "P70",
+    "P71",
+    "P72",
+    "P74",
+    "P76",
+    "P77",
+    "P78",
+    "P79",
+    "P8",
+    "P80",
+    "P81",
+    "P82",
+    "P84",
+    "P86",
+    "P87",
+    "P88",
+    "P89",
+    "P90",
+    "P91",
+    "P93",
+    "P94",
+    "P95",
+    "P98"
+  ],
+  "val_patient_ids": [
+    "P1",
+    "P108",
+    "P109",
+    "P110",
+    "P25",
+    "P36",
+    "P37",
+    "P42",
+    "P58",
+    "P62",
+    "P63",
+    "P68",
+    "P83",
+    "P85",
+    "P92",
+    "P96",
+    "P97"
+  ],
+  "test_patient_ids": [
+    "P102",
+    "P112",
+    "P13",
+    "P14",
+    "P15",
+    "P20",
+    "P28",
+    "P32",
+    "P38",
+    "P45",
+    "P46",
+    "P47",
+    "P53",
+    "P73",
+    "P75",
+    "P9",
+    "P99"
+  ],
+  "train": [
+    {
+      "patient_id": "P10",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP10_Asthma,E W,P R U,59,M.wav",
+      "file_name": "BP10_Asthma,E W,P R U,59,M.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P10",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP10_Asthma,E W,P R U,59,M.wav",
+      "file_name": "DP10_Asthma,E W,P R U,59,M.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P10",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP10_Asthma,E W,P R U,59,M.wav",
+      "file_name": "EP10_Asthma,E W,P R U,59,M.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P100",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP100_N,N,P R M,70,F.wav",
+      "file_name": "BP100_N,N,P R M,70,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P100",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP100_N,N,P R M,70,F.wav",
+      "file_name": "DP100_N,N,P R M,70,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P100",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP100_N,N,P R M,70,F.wav",
+      "file_name": "EP100_N,N,P R M,70,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P101",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP101_Asthma,E W,P L M,12,F.wav",
+      "file_name": "BP101_Asthma,E W,P L M,12,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P101",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP101_Asthma,E W,P L M,12,F.wav",
+      "file_name": "DP101_Asthma,E W,P L M,12,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P101",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP101_Asthma,E W,P L M,12,F.wav",
+      "file_name": "EP101_Asthma,E W,P L M,12,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P103",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP103_N,N,P R U,81,F.wav",
+      "file_name": "BP103_N,N,P R U,81,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P103",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP103_N,N,P R U,81,F.wav",
+      "file_name": "DP103_N,N,P R U,81,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P103",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP103_N,N,P R U,81,F.wav",
+      "file_name": "EP103_N,N,P R U,81,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P104",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP104_Asthma,E W,P L U,45,F.wav",
+      "file_name": "BP104_Asthma,E W,P L U,45,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P104",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP104_Asthma,E W,P L U,45,F.wav",
+      "file_name": "DP104_Asthma,E W,P L U,45,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P104",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP104_Asthma,E W,P L U,45,F.wav",
+      "file_name": "EP104_Asthma,E W,P L U,45,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P105",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP105_Lung Fibrosis,Crep,A U R,44,M.wav",
+      "file_name": "BP105_Lung Fibrosis,Crep,A U R,44,M.wav",
+      "diagnosis": "Lung Fibrosis",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P105",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP105_Lung Fibrosis,Crep,A U R,44,M.wav",
+      "file_name": "DP105_Lung Fibrosis,Crep,A U R,44,M.wav",
+      "diagnosis": "Lung Fibrosis",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P105",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP105_Lung Fibrosis,Crep,A U R,44,M.wav",
+      "file_name": "EP105_Lung Fibrosis,Crep,A U R,44,M.wav",
+      "diagnosis": "Lung Fibrosis",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P106",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP106_Asthma,E W,P L U,45,F.wav",
+      "file_name": "BP106_Asthma,E W,P L U,45,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P106",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP106_Asthma,E W,P L U,45,F.wav",
+      "file_name": "DP106_Asthma,E W,P L U,45,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P106",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP106_Asthma,E W,P L U,45,F.wav",
+      "file_name": "EP106_Asthma,E W,P L U,45,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P107",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP107_Asthma,E W,P L U,59,F.wav",
+      "file_name": "BP107_Asthma,E W,P L U,59,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P107",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP107_Asthma,E W,P L U,59,F.wav",
+      "file_name": "DP107_Asthma,E W,P L U,59,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P107",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP107_Asthma,E W,P L U,59,F.wav",
+      "file_name": "EP107_Asthma,E W,P L U,59,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P11",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP11_Heart Failure,C,P L L,53,M.wav",
+      "file_name": "BP11_Heart Failure,C,P L L,53,M.wav",
+      "diagnosis": "Heart Failure",
+      "sound_type": "C",
+      "label": 1
+    },
+    {
+      "patient_id": "P11",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP11_Heart Failure,C,P L L,53,M.wav",
+      "file_name": "DP11_Heart Failure,C,P L L,53,M.wav",
+      "diagnosis": "Heart Failure",
+      "sound_type": "C",
+      "label": 1
+    },
+    {
+      "patient_id": "P11",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP11_Heart Failure,C,P L L,53,M.wav",
+      "file_name": "EP11_Heart Failure,C,P L L,53,M.wav",
+      "diagnosis": "Heart Failure",
+      "sound_type": "C",
+      "label": 1
+    },
+    {
+      "patient_id": "P111",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP111_COPD,E W,P R L ,51,M.wav",
+      "file_name": "BP111_COPD,E W,P R L ,51,M.wav",
+      "diagnosis": "COPD",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P111",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP111_COPD,E W,P R L ,51,M.wav",
+      "file_name": "DP111_COPD,E W,P R L ,51,M.wav",
+      "diagnosis": "COPD",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P111",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP111_COPD,E W,P R L ,51,M.wav",
+      "file_name": "EP111_COPD,E W,P R L ,51,M.wav",
+      "diagnosis": "COPD",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P12",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP12_Asthma,E W,P L L,50,F.wav",
+      "file_name": "BP12_Asthma,E W,P L L,50,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P12",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP12_Asthma,E W,P L L,50,F.wav",
+      "file_name": "DP12_Asthma,E W,P L L,50,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P12",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP12_Asthma,E W,P L L,50,F.wav",
+      "file_name": "EP12_Asthma,E W,P L L,50,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P16",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP16_heart failure,C,P R U,56,M.wav",
+      "file_name": "BP16_heart failure,C,P R U,56,M.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "C",
+      "label": 1
+    },
+    {
+      "patient_id": "P16",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP16_heart failure,C,P R U,56,M.wav",
+      "file_name": "DP16_heart failure,C,P R U,56,M.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "C",
+      "label": 1
+    },
+    {
+      "patient_id": "P16",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP16_heart failure,C,P R U,56,M.wav",
+      "file_name": "EP16_heart failure,C,P R U,56,M.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "C",
+      "label": 1
+    },
+    {
+      "patient_id": "P17",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP17_COPD,E W,A R M,57,M.wav",
+      "file_name": "BP17_COPD,E W,A R M,57,M.wav",
+      "diagnosis": "COPD",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P17",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP17_COPD,E W,A R M,57,M.wav",
+      "file_name": "DP17_COPD,E W,A R M,57,M.wav",
+      "diagnosis": "COPD",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P17",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP17_COPD,E W,A R M,57,M.wav",
+      "file_name": "EP17_COPD,E W,A R M,57,M.wav",
+      "diagnosis": "COPD",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P18",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP18_pneumonia,C,P R U,57,M.wav",
+      "file_name": "BP18_pneumonia,C,P R U,57,M.wav",
+      "diagnosis": "pneumonia",
+      "sound_type": "C",
+      "label": 1
+    },
+    {
+      "patient_id": "P18",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP18_pneumonia,C,P R U,57,M.wav",
+      "file_name": "DP18_pneumonia,C,P R U,57,M.wav",
+      "diagnosis": "pneumonia",
+      "sound_type": "C",
+      "label": 1
+    },
+    {
+      "patient_id": "P18",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP18_pneumonia,C,P R U,57,M.wav",
+      "file_name": "EP18_pneumonia,C,P R U,57,M.wav",
+      "diagnosis": "pneumonia",
+      "sound_type": "C",
+      "label": 1
+    },
+    {
+      "patient_id": "P19",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP19_heart failure,C,P R U,70,F.wav",
+      "file_name": "BP19_heart failure,C,P R U,70,F.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "C",
+      "label": 1
+    },
+    {
+      "patient_id": "P19",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP19_heart failure,C,P R U,70,F.wav",
+      "file_name": "DP19_heart failure,C,P R U,70,F.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "C",
+      "label": 1
+    },
+    {
+      "patient_id": "P19",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP19_heart failure,C,P R U,70,F.wav",
+      "file_name": "EP19_heart failure,C,P R U,70,F.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "C",
+      "label": 1
+    },
+    {
+      "patient_id": "P2",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP2_Asthma,E W,P L L R,52,F.wav",
+      "file_name": "BP2_Asthma,E W,P L L R,52,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P2",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP2_Asthma,E W,P L L R,52,F.wav",
+      "file_name": "DP2_Asthma,E W,P L L R,52,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P2",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP2_Asthma,E W,P L L R,52,F.wav",
+      "file_name": "EP2_Asthma,E W,P L L R,52,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P21",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP21_BRON,Crep,P R L ,20,M.wav",
+      "file_name": "BP21_BRON,Crep,P R L ,20,M.wav",
+      "diagnosis": "BRON",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P21",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP21_BRON,Crep,P R L ,20,M.wav",
+      "file_name": "DP21_BRON,Crep,P R L ,20,M.wav",
+      "diagnosis": "BRON",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P21",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP21_BRON,Crep,P R L ,20,M.wav",
+      "file_name": "EP21_BRON,Crep,P R L ,20,M.wav",
+      "diagnosis": "BRON",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P22",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP22_BRON,Crep,P R U,24,M.wav",
+      "file_name": "BP22_BRON,Crep,P R U,24,M.wav",
+      "diagnosis": "BRON",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P22",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP22_BRON,Crep,P R U,24,M.wav",
+      "file_name": "DP22_BRON,Crep,P R U,24,M.wav",
+      "diagnosis": "BRON",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P22",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP22_BRON,Crep,P R U,24,M.wav",
+      "file_name": "EP22_BRON,Crep,P R U,24,M.wav",
+      "diagnosis": "BRON",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P23",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP23_Lung Fibrosis,Crep,P R L ,50,M.wav",
+      "file_name": "BP23_Lung Fibrosis,Crep,P R L ,50,M.wav",
+      "diagnosis": "Lung Fibrosis",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P23",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP23_Lung Fibrosis,Crep,P R L ,50,M.wav",
+      "file_name": "DP23_Lung Fibrosis,Crep,P R L ,50,M.wav",
+      "diagnosis": "Lung Fibrosis",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P23",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP23_Lung Fibrosis,Crep,P R L ,50,M.wav",
+      "file_name": "EP23_Lung Fibrosis,Crep,P R L ,50,M.wav",
+      "diagnosis": "Lung Fibrosis",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P24",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP24_heart failure,Crep,P R L ,76,F.wav",
+      "file_name": "BP24_heart failure,Crep,P R L ,76,F.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P24",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP24_heart failure,Crep,P R L ,76,F.wav",
+      "file_name": "DP24_heart failure,Crep,P R L ,76,F.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P24",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP24_heart failure,Crep,P R L ,76,F.wav",
+      "file_name": "EP24_heart failure,Crep,P R L ,76,F.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P26",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP26_Lung Fibrosis,Crep,P,90,F.wav",
+      "file_name": "BP26_Lung Fibrosis,Crep,P,90,F.wav",
+      "diagnosis": "Lung Fibrosis",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P26",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP26_Lung Fibrosis,Crep,P,90,F.wav",
+      "file_name": "DP26_Lung Fibrosis,Crep,P,90,F.wav",
+      "diagnosis": "Lung Fibrosis",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P26",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP26_Lung Fibrosis,Crep,P,90,F.wav",
+      "file_name": "EP26_Lung Fibrosis,Crep,P,90,F.wav",
+      "diagnosis": "Lung Fibrosis",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P27",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP27_asthma,E W,P R M,53,F.wav",
+      "file_name": "BP27_asthma,E W,P R M,53,F.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P27",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP27_asthma,E W,P R M,53,F.wav",
+      "file_name": "DP27_asthma,E W,P R M,53,F.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P27",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP27_asthma,E W,P R M,53,F.wav",
+      "file_name": "EP27_asthma,E W,P R M,53,F.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P29",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP29_heart failure,Crep,P L L,57,M.wav",
+      "file_name": "BP29_heart failure,Crep,P L L,57,M.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P29",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP29_heart failure,Crep,P L L,57,M.wav",
+      "file_name": "DP29_heart failure,Crep,P L L,57,M.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P29",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP29_heart failure,Crep,P L L,57,M.wav",
+      "file_name": "EP29_heart failure,Crep,P L L,57,M.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P3",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP3_Asthma,I E W,P L L R,50,F.wav",
+      "file_name": "BP3_Asthma,I E W,P L L R,50,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "I E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P3",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP3_Asthma,I E W,P L L R,50,F.wav",
+      "file_name": "DP3_Asthma,I E W,P L L R,50,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "I E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P3",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP3_Asthma,I E W,P L L R,50,F.wav",
+      "file_name": "EP3_Asthma,I E W,P L L R,50,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "I E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P30",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP30_N,N,P R M,18,F.wav",
+      "file_name": "BP30_N,N,P R M,18,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P30",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP30_N,N,P R M,18,F.wav",
+      "file_name": "DP30_N,N,P R M,18,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P30",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP30_N,N,P R M,18,F.wav",
+      "file_name": "EP30_N,N,P R M,18,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P31",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP31_N,N,P L M,27,F.wav",
+      "file_name": "BP31_N,N,P L M,27,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P31",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP31_N,N,P L M,27,F.wav",
+      "file_name": "DP31_N,N,P L M,27,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P31",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP31_N,N,P L M,27,F.wav",
+      "file_name": "EP31_N,N,P L M,27,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P33",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP33_Asthma,E W,P R M,43,F.wav",
+      "file_name": "BP33_Asthma,E W,P R M,43,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P33",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP33_Asthma,E W,P R M,43,F.wav",
+      "file_name": "DP33_Asthma,E W,P R M,43,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P33",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP33_Asthma,E W,P R M,43,F.wav",
+      "file_name": "EP33_Asthma,E W,P R M,43,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P34",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP34_heart failure,Crep,P R M,78,F.wav",
+      "file_name": "BP34_heart failure,Crep,P R M,78,F.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P34",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP34_heart failure,Crep,P R M,78,F.wav",
+      "file_name": "DP34_heart failure,Crep,P R M,78,F.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P34",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP34_heart failure,Crep,P R M,78,F.wav",
+      "file_name": "EP34_heart failure,Crep,P R M,78,F.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P35",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP35_Asthma,E W,A R L,38,M.wav",
+      "file_name": "BP35_Asthma,E W,A R L,38,M.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P35",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP35_Asthma,E W,A R L,38,M.wav",
+      "file_name": "DP35_Asthma,E W,A R L,38,M.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P35",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP35_Asthma,E W,A R L,38,M.wav",
+      "file_name": "EP35_Asthma,E W,A R L,38,M.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P39",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP39_heart failure,Crep,P R L ,67,M.wav",
+      "file_name": "BP39_heart failure,Crep,P R L ,67,M.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P39",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP39_heart failure,Crep,P R L ,67,M.wav",
+      "file_name": "DP39_heart failure,Crep,P R L ,67,M.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P39",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP39_heart failure,Crep,P R L ,67,M.wav",
+      "file_name": "EP39_heart failure,Crep,P R L ,67,M.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P4",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP4_Heart Failure + Lung Fibrosis ,I C,P L R,72,F.wav",
+      "file_name": "BP4_Heart Failure + Lung Fibrosis ,I C,P L R,72,F.wav",
+      "diagnosis": "Heart Failure + Lung Fibrosis",
+      "sound_type": "I C",
+      "label": 1
+    },
+    {
+      "patient_id": "P4",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP4_Heart Failure + Lung Fibrosis ,I C,P L R,72,F.wav",
+      "file_name": "DP4_Heart Failure + Lung Fibrosis ,I C,P L R,72,F.wav",
+      "diagnosis": "Heart Failure + Lung Fibrosis",
+      "sound_type": "I C",
+      "label": 1
+    },
+    {
+      "patient_id": "P4",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP4_Heart Failure + Lung Fibrosis ,I C,P L R,72,F.wav",
+      "file_name": "EP4_Heart Failure + Lung Fibrosis ,I C,P L R,72,F.wav",
+      "diagnosis": "Heart Failure + Lung Fibrosis",
+      "sound_type": "I C",
+      "label": 1
+    },
+    {
+      "patient_id": "P40",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP40_heart failure,Crep,A R M,26,M.wav",
+      "file_name": "BP40_heart failure,Crep,A R M,26,M.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P40",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP40_heart failure,Crep,A R M,26,M.wav",
+      "file_name": "DP40_heart failure,Crep,A R M,26,M.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P40",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP40_heart failure,Crep,A R M,26,M.wav",
+      "file_name": "EP40_heart failure,Crep,A R M,26,M.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P41",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP41_pneumonia,Crep,P R M,51,M.wav",
+      "file_name": "BP41_pneumonia,Crep,P R M,51,M.wav",
+      "diagnosis": "pneumonia",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P41",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP41_pneumonia,Crep,P R M,51,M.wav",
+      "file_name": "DP41_pneumonia,Crep,P R M,51,M.wav",
+      "diagnosis": "pneumonia",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P41",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP41_pneumonia,Crep,P R M,51,M.wav",
+      "file_name": "EP41_pneumonia,Crep,P R M,51,M.wav",
+      "diagnosis": "pneumonia",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P43",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP43_asthma,E W,P L M,15,M.wav",
+      "file_name": "BP43_asthma,E W,P L M,15,M.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P43",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP43_asthma,E W,P L M,15,M.wav",
+      "file_name": "DP43_asthma,E W,P L M,15,M.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P43",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP43_asthma,E W,P L M,15,M.wav",
+      "file_name": "EP43_asthma,E W,P L M,15,M.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P44",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP44_asthma,E W,P R U,40,M.wav",
+      "file_name": "BP44_asthma,E W,P R U,40,M.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P44",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP44_asthma,E W,P R U,40,M.wav",
+      "file_name": "DP44_asthma,E W,P R U,40,M.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P44",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP44_asthma,E W,P R U,40,M.wav",
+      "file_name": "EP44_asthma,E W,P R U,40,M.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P48",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP48_N,N,P L U,31,M.wav",
+      "file_name": "BP48_N,N,P L U,31,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P48",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP48_N,N,P L U,31,M.wav",
+      "file_name": "DP48_N,N,P L U,31,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P48",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP48_N,N,P L U,31,M.wav",
+      "file_name": "EP48_N,N,P L U,31,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P49",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP49_N,N,P R M,21,M.wav",
+      "file_name": "BP49_N,N,P R M,21,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P49",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP49_N,N,P R M,21,M.wav",
+      "file_name": "DP49_N,N,P R M,21,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P49",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP49_N,N,P R M,21,M.wav",
+      "file_name": "EP49_N,N,P R M,21,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P5",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP5_Heart Failure + COPD,I C E W,P L R ,71,M.wav",
+      "file_name": "BP5_Heart Failure + COPD,I C E W,P L R ,71,M.wav",
+      "diagnosis": "Heart Failure + COPD",
+      "sound_type": "I C E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P5",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP5_Heart Failure + COPD,I C E W,P L R ,71,M.wav",
+      "file_name": "DP5_Heart Failure + COPD,I C E W,P L R ,71,M.wav",
+      "diagnosis": "Heart Failure + COPD",
+      "sound_type": "I C E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P5",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP5_Heart Failure + COPD,I C E W,P L R ,71,M.wav",
+      "file_name": "EP5_Heart Failure + COPD,I C E W,P L R ,71,M.wav",
+      "diagnosis": "Heart Failure + COPD",
+      "sound_type": "I C E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P50",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP50_N,N,P R L ,27,M.wav",
+      "file_name": "BP50_N,N,P R L ,27,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P50",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP50_N,N,P R L ,27,M.wav",
+      "file_name": "DP50_N,N,P R L ,27,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P50",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP50_N,N,P R L ,27,M.wav",
+      "file_name": "EP50_N,N,P R L ,27,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P51",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP51_N,N,P L M,30,M.wav",
+      "file_name": "BP51_N,N,P L M,30,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P51",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP51_N,N,P L M,30,M.wav",
+      "file_name": "DP51_N,N,P L M,30,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P51",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP51_N,N,P L M,30,M.wav",
+      "file_name": "EP51_N,N,P L M,30,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P52",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP52_Lung Fibrosis,Crep,P L L,76,F.wav",
+      "file_name": "BP52_Lung Fibrosis,Crep,P L L,76,F.wav",
+      "diagnosis": "Lung Fibrosis",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P52",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP52_Lung Fibrosis,Crep,P L L,76,F.wav",
+      "file_name": "DP52_Lung Fibrosis,Crep,P L L,76,F.wav",
+      "diagnosis": "Lung Fibrosis",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P52",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP52_Lung Fibrosis,Crep,P L L,76,F.wav",
+      "file_name": "EP52_Lung Fibrosis,Crep,P L L,76,F.wav",
+      "diagnosis": "Lung Fibrosis",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P54",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP54_heart failure,Crep,P R L ,73,F.wav",
+      "file_name": "BP54_heart failure,Crep,P R L ,73,F.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P54",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP54_heart failure,Crep,P R L ,73,F.wav",
+      "file_name": "DP54_heart failure,Crep,P R L ,73,F.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P54",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP54_heart failure,Crep,P R L ,73,F.wav",
+      "file_name": "EP54_heart failure,Crep,P R L ,73,F.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P55",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP55_asthma,E W,P R U,72,F.wav",
+      "file_name": "BP55_asthma,E W,P R U,72,F.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P55",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP55_asthma,E W,P R U,72,F.wav",
+      "file_name": "DP55_asthma,E W,P R U,72,F.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P55",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP55_asthma,E W,P R U,72,F.wav",
+      "file_name": "EP55_asthma,E W,P R U,72,F.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P56",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP56_asthma,E W,P R M,56,F.wav",
+      "file_name": "BP56_asthma,E W,P R M,56,F.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P56",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP56_asthma,E W,P R M,56,F.wav",
+      "file_name": "DP56_asthma,E W,P R M,56,F.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P56",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP56_asthma,E W,P R M,56,F.wav",
+      "file_name": "EP56_asthma,E W,P R M,56,F.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P57",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP57_COPD,E W,P R L ,42,M.wav",
+      "file_name": "BP57_COPD,E W,P R L ,42,M.wav",
+      "diagnosis": "COPD",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P57",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP57_COPD,E W,P R L ,42,M.wav",
+      "file_name": "DP57_COPD,E W,P R L ,42,M.wav",
+      "diagnosis": "COPD",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P57",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP57_COPD,E W,P R L ,42,M.wav",
+      "file_name": "EP57_COPD,E W,P R L ,42,M.wav",
+      "diagnosis": "COPD",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P59",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP59_heart failure,Crep,P R L ,83,F.wav",
+      "file_name": "BP59_heart failure,Crep,P R L ,83,F.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P59",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP59_heart failure,Crep,P R L ,83,F.wav",
+      "file_name": "DP59_heart failure,Crep,P R L ,83,F.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P59",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP59_heart failure,Crep,P R L ,83,F.wav",
+      "file_name": "EP59_heart failure,Crep,P R L ,83,F.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P6",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP6_Plueral Effusion,I C B,P L R,81,M.wav",
+      "file_name": "BP6_Plueral Effusion,I C B,P L R,81,M.wav",
+      "diagnosis": "Plueral Effusion",
+      "sound_type": "I C B",
+      "label": 1
+    },
+    {
+      "patient_id": "P6",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP6_Plueral Effusion,I C B,P L R,81,M.wav",
+      "file_name": "DP6_Plueral Effusion,I C B,P L R,81,M.wav",
+      "diagnosis": "Plueral Effusion",
+      "sound_type": "I C B",
+      "label": 1
+    },
+    {
+      "patient_id": "P6",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP6_Plueral Effusion,I C B,P L R,81,M.wav",
+      "file_name": "EP6_Plueral Effusion,I C B,P L R,81,M.wav",
+      "diagnosis": "Plueral Effusion",
+      "sound_type": "I C B",
+      "label": 1
+    },
+    {
+      "patient_id": "P60",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP60_heart failure,Crep,P L L,83,F.wav",
+      "file_name": "BP60_heart failure,Crep,P L L,83,F.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P60",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP60_heart failure,Crep,P L L,83,F.wav",
+      "file_name": "DP60_heart failure,Crep,P L L,83,F.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P60",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP60_heart failure,Crep,P L L,83,F.wav",
+      "file_name": "EP60_heart failure,Crep,P L L,83,F.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P61",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP61_COPD,E W,P R L ,53,M.wav",
+      "file_name": "BP61_COPD,E W,P R L ,53,M.wav",
+      "diagnosis": "COPD",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P61",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP61_COPD,E W,P R L ,53,M.wav",
+      "file_name": "DP61_COPD,E W,P R L ,53,M.wav",
+      "diagnosis": "COPD",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P61",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP61_COPD,E W,P R L ,53,M.wav",
+      "file_name": "EP61_COPD,E W,P R L ,53,M.wav",
+      "diagnosis": "COPD",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P64",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP64_asthma,E W,P L U,60,M.wav",
+      "file_name": "BP64_asthma,E W,P L U,60,M.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P64",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP64_asthma,E W,P L U,60,M.wav",
+      "file_name": "DP64_asthma,E W,P L U,60,M.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P64",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP64_asthma,E W,P L U,60,M.wav",
+      "file_name": "EP64_asthma,E W,P L U,60,M.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P65",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP65_asthma,E W,P R L ,60,F.wav",
+      "file_name": "BP65_asthma,E W,P R L ,60,F.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P65",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP65_asthma,E W,P R L ,60,F.wav",
+      "file_name": "DP65_asthma,E W,P R L ,60,F.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P65",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP65_asthma,E W,P R L ,60,F.wav",
+      "file_name": "EP65_asthma,E W,P R L ,60,F.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P66",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP66_heart failure,Crep,P R L ,43,M.wav",
+      "file_name": "BP66_heart failure,Crep,P R L ,43,M.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P66",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP66_heart failure,Crep,P R L ,43,M.wav",
+      "file_name": "DP66_heart failure,Crep,P R L ,43,M.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P66",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP66_heart failure,Crep,P R L ,43,M.wav",
+      "file_name": "EP66_heart failure,Crep,P R L ,43,M.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P67",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP67_heart failure,Crep,P R L ,24,F.wav",
+      "file_name": "BP67_heart failure,Crep,P R L ,24,F.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P67",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP67_heart failure,Crep,P R L ,24,F.wav",
+      "file_name": "DP67_heart failure,Crep,P R L ,24,F.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P67",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP67_heart failure,Crep,P R L ,24,F.wav",
+      "file_name": "EP67_heart failure,Crep,P R L ,24,F.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P69",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP69_pneumonia,Bronchial,P R L ,64,M.wav",
+      "file_name": "BP69_pneumonia,Bronchial,P R L ,64,M.wav",
+      "diagnosis": "pneumonia",
+      "sound_type": "Bronchial",
+      "label": 1
+    },
+    {
+      "patient_id": "P69",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP69_pneumonia,Bronchial,P R L ,64,M.wav",
+      "file_name": "DP69_pneumonia,Bronchial,P R L ,64,M.wav",
+      "diagnosis": "pneumonia",
+      "sound_type": "Bronchial",
+      "label": 1
+    },
+    {
+      "patient_id": "P69",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP69_pneumonia,Bronchial,P R L ,64,M.wav",
+      "file_name": "EP69_pneumonia,Bronchial,P R L ,64,M.wav",
+      "diagnosis": "pneumonia",
+      "sound_type": "Bronchial",
+      "label": 1
+    },
+    {
+      "patient_id": "P7",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP7_Heart Failure + COPD,I C E W,P L R,65,M.wav",
+      "file_name": "BP7_Heart Failure + COPD,I C E W,P L R,65,M.wav",
+      "diagnosis": "Heart Failure + COPD",
+      "sound_type": "I C E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P7",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP7_Heart Failure + COPD,I C E W,P L R,65,M.wav",
+      "file_name": "DP7_Heart Failure + COPD,I C E W,P L R,65,M.wav",
+      "diagnosis": "Heart Failure + COPD",
+      "sound_type": "I C E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P7",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP7_Heart Failure + COPD,I C E W,P L R,65,M.wav",
+      "file_name": "EP7_Heart Failure + COPD,I C E W,P L R,65,M.wav",
+      "diagnosis": "Heart Failure + COPD",
+      "sound_type": "I C E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P70",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP70_N,N,P L U,52,F.wav",
+      "file_name": "BP70_N,N,P L U,52,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P70",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP70_N,N,P L U,52,F.wav",
+      "file_name": "DP70_N,N,P L U,52,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P70",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP70_N,N,P L U,52,F.wav",
+      "file_name": "EP70_N,N,P L U,52,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P71",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP71_N,N,P R U,36,M.wav",
+      "file_name": "BP71_N,N,P R U,36,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P71",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP71_N,N,P R U,36,M.wav",
+      "file_name": "DP71_N,N,P R U,36,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P71",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP71_N,N,P R U,36,M.wav",
+      "file_name": "EP71_N,N,P R U,36,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P72",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP72_N,N,P R U,24,F.wav",
+      "file_name": "BP72_N,N,P R U,24,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P72",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP72_N,N,P R U,24,F.wav",
+      "file_name": "DP72_N,N,P R U,24,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P72",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP72_N,N,P R U,24,F.wav",
+      "file_name": "EP72_N,N,P R U,24,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P74",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP74_N,N,P R M,74,M.wav",
+      "file_name": "BP74_N,N,P R M,74,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P74",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP74_N,N,P R M,74,M.wav",
+      "file_name": "DP74_N,N,P R M,74,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P74",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP74_N,N,P R M,74,M.wav",
+      "file_name": "EP74_N,N,P R M,74,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P76",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP76_N,N,A L U,31,M.wav",
+      "file_name": "BP76_N,N,A L U,31,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P76",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP76_N,N,A L U,31,M.wav",
+      "file_name": "DP76_N,N,A L U,31,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P76",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP76_N,N,A L U,31,M.wav",
+      "file_name": "EP76_N,N,A L U,31,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P77",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP77_Asthma,E W,A R L,40,M.wav",
+      "file_name": "BP77_Asthma,E W,A R L,40,M.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P77",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP77_Asthma,E W,A R L,40,M.wav",
+      "file_name": "DP77_Asthma,E W,A R L,40,M.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P77",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP77_Asthma,E W,A R L,40,M.wav",
+      "file_name": "EP77_Asthma,E W,A R L,40,M.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P78",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP78_Asthma,E W,P R M,20,M.wav",
+      "file_name": "BP78_Asthma,E W,P R M,20,M.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P78",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP78_Asthma,E W,P R M,20,M.wav",
+      "file_name": "DP78_Asthma,E W,P R M,20,M.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P78",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP78_Asthma,E W,P R M,20,M.wav",
+      "file_name": "EP78_Asthma,E W,P R M,20,M.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P79",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP79_asthma,E W,A R U,46,M.wav",
+      "file_name": "BP79_asthma,E W,A R U,46,M.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P79",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP79_asthma,E W,A R U,46,M.wav",
+      "file_name": "DP79_asthma,E W,A R U,46,M.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P79",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP79_asthma,E W,A R U,46,M.wav",
+      "file_name": "EP79_asthma,E W,A R U,46,M.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P8",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP8_Plueral Effusion,I C B,P L L,70,M.wav",
+      "file_name": "BP8_Plueral Effusion,I C B,P L L,70,M.wav",
+      "diagnosis": "Plueral Effusion",
+      "sound_type": "I C B",
+      "label": 1
+    },
+    {
+      "patient_id": "P8",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP8_Plueral Effusion,I C B,P L L,70,M.wav",
+      "file_name": "DP8_Plueral Effusion,I C B,P L L,70,M.wav",
+      "diagnosis": "Plueral Effusion",
+      "sound_type": "I C B",
+      "label": 1
+    },
+    {
+      "patient_id": "P8",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP8_Plueral Effusion,I C B,P L L,70,M.wav",
+      "file_name": "EP8_Plueral Effusion,I C B,P L L,70,M.wav",
+      "diagnosis": "Plueral Effusion",
+      "sound_type": "I C B",
+      "label": 1
+    },
+    {
+      "patient_id": "P80",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP80_asthma,E W,A L U,38,M.wav",
+      "file_name": "BP80_asthma,E W,A L U,38,M.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P80",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP80_asthma,E W,A L U,38,M.wav",
+      "file_name": "DP80_asthma,E W,A L U,38,M.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P80",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP80_asthma,E W,A L U,38,M.wav",
+      "file_name": "EP80_asthma,E W,A L U,38,M.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P81",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP81_N,N,P L U,33,M.wav",
+      "file_name": "BP81_N,N,P L U,33,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P81",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP81_N,N,P L U,33,M.wav",
+      "file_name": "DP81_N,N,P L U,33,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P81",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP81_N,N,P L U,33,M.wav",
+      "file_name": "EP81_N,N,P L U,33,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P82",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP82_N,N,P L U,38,M.wav",
+      "file_name": "BP82_N,N,P L U,38,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P82",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP82_N,N,P L U,38,M.wav",
+      "file_name": "DP82_N,N,P L U,38,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P82",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP82_N,N,P L U,38,M.wav",
+      "file_name": "EP82_N,N,P L U,38,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P84",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP84_N,N,A R U,65,F.wav",
+      "file_name": "BP84_N,N,A R U,65,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P84",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP84_N,N,A R U,65,F.wav",
+      "file_name": "DP84_N,N,A R U,65,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P84",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP84_N,N,A R U,65,F.wav",
+      "file_name": "EP84_N,N,A R U,65,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P86",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP86_N,N,P R U,68,F.wav",
+      "file_name": "BP86_N,N,P R U,68,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P86",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP86_N,N,P R U,68,F.wav",
+      "file_name": "DP86_N,N,P R U,68,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P86",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP86_N,N,P R U,68,F.wav",
+      "file_name": "EP86_N,N,P R U,68,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P87",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP87_N,N,P R M,72,M.wav",
+      "file_name": "BP87_N,N,P R M,72,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P87",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP87_N,N,P R M,72,M.wav",
+      "file_name": "DP87_N,N,P R M,72,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P87",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP87_N,N,P R M,72,M.wav",
+      "file_name": "EP87_N,N,P R M,72,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P88",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP88_N,N,A R U,29,M.wav",
+      "file_name": "BP88_N,N,A R U,29,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P88",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP88_N,N,A R U,29,M.wav",
+      "file_name": "DP88_N,N,A R U,29,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P88",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP88_N,N,A R U,29,M.wav",
+      "file_name": "EP88_N,N,A R U,29,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P89",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP89_N,N,P L M,70,M.wav",
+      "file_name": "BP89_N,N,P L M,70,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P89",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP89_N,N,P L M,70,M.wav",
+      "file_name": "DP89_N,N,P L M,70,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P89",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP89_N,N,P L M,70,M.wav",
+      "file_name": "EP89_N,N,P L M,70,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P90",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP90_heart failure,Crep,P L M,74,F.wav",
+      "file_name": "BP90_heart failure,Crep,P L M,74,F.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P90",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP90_heart failure,Crep,P L M,74,F.wav",
+      "file_name": "DP90_heart failure,Crep,P L M,74,F.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P90",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP90_heart failure,Crep,P L M,74,F.wav",
+      "file_name": "EP90_heart failure,Crep,P L M,74,F.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P91",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP91_asthma,E W,P R U,43,F.wav",
+      "file_name": "BP91_asthma,E W,P R U,43,F.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P91",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP91_asthma,E W,P R U,43,F.wav",
+      "file_name": "DP91_asthma,E W,P R U,43,F.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P91",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP91_asthma,E W,P R U,43,F.wav",
+      "file_name": "EP91_asthma,E W,P R U,43,F.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P93",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP93_N,N,P R M,75,M.wav",
+      "file_name": "BP93_N,N,P R M,75,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P93",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP93_N,N,P R M,75,M.wav",
+      "file_name": "DP93_N,N,P R M,75,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P93",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP93_N,N,P R M,75,M.wav",
+      "file_name": "EP93_N,N,P R M,75,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P94",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP94_N,N,P L L,24,M.wav",
+      "file_name": "BP94_N,N,P L L,24,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P94",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP94_N,N,P L L,24,M.wav",
+      "file_name": "DP94_N,N,P L L,24,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P94",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP94_N,N,P L L,24,M.wav",
+      "file_name": "EP94_N,N,P L L,24,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P95",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP95_N,N,P L M,18,M.wav",
+      "file_name": "BP95_N,N,P L M,18,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P95",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP95_N,N,P L M,18,M.wav",
+      "file_name": "DP95_N,N,P L M,18,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P95",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP95_N,N,P L M,18,M.wav",
+      "file_name": "EP95_N,N,P L M,18,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P98",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP98_N,N,P L L,53,M.wav",
+      "file_name": "BP98_N,N,P L L,53,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P98",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP98_N,N,P L L,53,M.wav",
+      "file_name": "DP98_N,N,P L L,53,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P98",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP98_N,N,P L L,53,M.wav",
+      "file_name": "EP98_N,N,P L L,53,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    }
+  ],
+  "val": [
+    {
+      "patient_id": "P1",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP1_Asthma,I E W,P L L,70,M.wav",
+      "file_name": "BP1_Asthma,I E W,P L L,70,M.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "I E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P1",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP1_Asthma,I E W,P L L,70,M.wav",
+      "file_name": "DP1_Asthma,I E W,P L L,70,M.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "I E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P1",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP1_Asthma,I E W,P L L,70,M.wav",
+      "file_name": "EP1_Asthma,I E W,P L L,70,M.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "I E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P108",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP108_COPD,E W,P R L ,63,M.wav",
+      "file_name": "BP108_COPD,E W,P R L ,63,M.wav",
+      "diagnosis": "COPD",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P108",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP108_COPD,E W,P R L ,63,M.wav",
+      "file_name": "DP108_COPD,E W,P R L ,63,M.wav",
+      "diagnosis": "COPD",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P108",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP108_COPD,E W,P R L ,63,M.wav",
+      "file_name": "EP108_COPD,E W,P R L ,63,M.wav",
+      "diagnosis": "COPD",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P109",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP109_N,N,P L M,26,M.wav",
+      "file_name": "BP109_N,N,P L M,26,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P109",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP109_N,N,P L M,26,M.wav",
+      "file_name": "DP109_N,N,P L M,26,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P109",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP109_N,N,P L M,26,M.wav",
+      "file_name": "EP109_N,N,P L M,26,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P110",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP110_COPD,E W,P L L,62,M.wav",
+      "file_name": "BP110_COPD,E W,P L L,62,M.wav",
+      "diagnosis": "COPD",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P110",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP110_COPD,E W,P L L,62,M.wav",
+      "file_name": "DP110_COPD,E W,P L L,62,M.wav",
+      "diagnosis": "COPD",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P110",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP110_COPD,E W,P L L,62,M.wav",
+      "file_name": "EP110_COPD,E W,P L L,62,M.wav",
+      "diagnosis": "COPD",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P25",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP25_copd,E W,P L L,76,M.wav",
+      "file_name": "BP25_copd,E W,P L L,76,M.wav",
+      "diagnosis": "copd",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P25",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP25_copd,E W,P L L,76,M.wav",
+      "file_name": "DP25_copd,E W,P L L,76,M.wav",
+      "diagnosis": "copd",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P25",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP25_copd,E W,P L L,76,M.wav",
+      "file_name": "EP25_copd,E W,P L L,76,M.wav",
+      "diagnosis": "copd",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P36",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP36_pneumonia,Crep,P R M,36,F.wav",
+      "file_name": "BP36_pneumonia,Crep,P R M,36,F.wav",
+      "diagnosis": "pneumonia",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P36",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP36_pneumonia,Crep,P R M,36,F.wav",
+      "file_name": "DP36_pneumonia,Crep,P R M,36,F.wav",
+      "diagnosis": "pneumonia",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P36",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP36_pneumonia,Crep,P R M,36,F.wav",
+      "file_name": "EP36_pneumonia,Crep,P R M,36,F.wav",
+      "diagnosis": "pneumonia",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P37",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP37_pneumonia,Crep,A R L,70,F.wav",
+      "file_name": "BP37_pneumonia,Crep,A R L,70,F.wav",
+      "diagnosis": "pneumonia",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P37",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP37_pneumonia,Crep,A R L,70,F.wav",
+      "file_name": "DP37_pneumonia,Crep,A R L,70,F.wav",
+      "diagnosis": "pneumonia",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P37",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP37_pneumonia,Crep,A R L,70,F.wav",
+      "file_name": "EP37_pneumonia,Crep,A R L,70,F.wav",
+      "diagnosis": "pneumonia",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P42",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP42_heart failure,Crep,P L L,56,M.wav",
+      "file_name": "BP42_heart failure,Crep,P L L,56,M.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P42",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP42_heart failure,Crep,P L L,56,M.wav",
+      "file_name": "DP42_heart failure,Crep,P L L,56,M.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P42",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP42_heart failure,Crep,P L L,56,M.wav",
+      "file_name": "EP42_heart failure,Crep,P L L,56,M.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P58",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP58_asthma,E W,P L M,40,M.wav",
+      "file_name": "BP58_asthma,E W,P L M,40,M.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P58",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP58_asthma,E W,P L M,40,M.wav",
+      "file_name": "DP58_asthma,E W,P L M,40,M.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P58",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP58_asthma,E W,P L M,40,M.wav",
+      "file_name": "EP58_asthma,E W,P L M,40,M.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P62",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP62_COPD,E W,P L M,53,M.wav",
+      "file_name": "BP62_COPD,E W,P L M,53,M.wav",
+      "diagnosis": "COPD",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P62",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP62_COPD,E W,P L M,53,M.wav",
+      "file_name": "DP62_COPD,E W,P L M,53,M.wav",
+      "diagnosis": "COPD",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P62",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP62_COPD,E W,P L M,53,M.wav",
+      "file_name": "EP62_COPD,E W,P L M,53,M.wav",
+      "diagnosis": "COPD",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P63",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP63_COPD,E W,P R L ,58,F.wav",
+      "file_name": "BP63_COPD,E W,P R L ,58,F.wav",
+      "diagnosis": "COPD",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P63",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP63_COPD,E W,P R L ,58,F.wav",
+      "file_name": "DP63_COPD,E W,P R L ,58,F.wav",
+      "diagnosis": "COPD",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P63",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP63_COPD,E W,P R L ,58,F.wav",
+      "file_name": "EP63_COPD,E W,P R L ,58,F.wav",
+      "diagnosis": "COPD",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P68",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP68_asthma,E W,P R L ,21,F.wav",
+      "file_name": "BP68_asthma,E W,P R L ,21,F.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P68",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP68_asthma,E W,P R L ,21,F.wav",
+      "file_name": "DP68_asthma,E W,P R L ,21,F.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P68",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP68_asthma,E W,P R L ,21,F.wav",
+      "file_name": "EP68_asthma,E W,P R L ,21,F.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P83",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP83_N,N,A R U,18,F.wav",
+      "file_name": "BP83_N,N,A R U,18,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P83",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP83_N,N,A R U,18,F.wav",
+      "file_name": "DP83_N,N,A R U,18,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P83",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP83_N,N,A R U,18,F.wav",
+      "file_name": "EP83_N,N,A R U,18,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P85",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP85_N,N,A R U,33,M.wav",
+      "file_name": "BP85_N,N,A R U,33,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P85",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP85_N,N,A R U,33,M.wav",
+      "file_name": "DP85_N,N,A R U,33,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P85",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP85_N,N,A R U,33,M.wav",
+      "file_name": "EP85_N,N,A R U,33,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P92",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP92_N,N,P L L ,43,M.wav",
+      "file_name": "BP92_N,N,P L L ,43,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P92",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP92_N,N,P L L ,43,M.wav",
+      "file_name": "DP92_N,N,P L L ,43,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P92",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP92_N,N,P L L ,43,M.wav",
+      "file_name": "EP92_N,N,P L L ,43,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P96",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP96_N,N,P R L ,66,F.wav",
+      "file_name": "BP96_N,N,P R L ,66,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P96",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP96_N,N,P R L ,66,F.wav",
+      "file_name": "DP96_N,N,P R L ,66,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P96",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP96_N,N,P R L ,66,F.wav",
+      "file_name": "EP96_N,N,P R L ,66,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P97",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP97_Asthma,E W,P R U,24,M.wav",
+      "file_name": "BP97_Asthma,E W,P R U,24,M.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P97",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP97_Asthma,E W,P R U,24,M.wav",
+      "file_name": "DP97_Asthma,E W,P R U,24,M.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P97",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP97_Asthma,E W,P R U,24,M.wav",
+      "file_name": "EP97_Asthma,E W,P R U,24,M.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    }
+  ],
+  "test": [
+    {
+      "patient_id": "P102",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP102_N,N,P L L,41,M.wav",
+      "file_name": "BP102_N,N,P L L,41,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P102",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP102_N,N,P L L,41,M.wav",
+      "file_name": "DP102_N,N,P L L,41,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P102",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP102_N,N,P L L,41,M.wav",
+      "file_name": "EP102_N,N,P L L,41,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P112",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP112_N,N,P L M,30,M.wav",
+      "file_name": "BP112_N,N,P L M,30,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P112",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP112_N,N,P L M,30,M.wav",
+      "file_name": "DP112_N,N,P L M,30,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P112",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP112_N,N,P L M,30,M.wav",
+      "file_name": "EP112_N,N,P L M,30,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P13",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP13_Heart Failure,C,P L L,55,M.wav",
+      "file_name": "BP13_Heart Failure,C,P L L,55,M.wav",
+      "diagnosis": "Heart Failure",
+      "sound_type": "C",
+      "label": 1
+    },
+    {
+      "patient_id": "P13",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP13_Heart Failure,C,P L L,55,M.wav",
+      "file_name": "DP13_Heart Failure,C,P L L,55,M.wav",
+      "diagnosis": "Heart Failure",
+      "sound_type": "C",
+      "label": 1
+    },
+    {
+      "patient_id": "P13",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP13_Heart Failure,C,P L L,55,M.wav",
+      "file_name": "EP13_Heart Failure,C,P L L,55,M.wav",
+      "diagnosis": "Heart Failure",
+      "sound_type": "C",
+      "label": 1
+    },
+    {
+      "patient_id": "P14",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP14_Heart Failure,C,A R M,54,M.wav",
+      "file_name": "BP14_Heart Failure,C,A R M,54,M.wav",
+      "diagnosis": "Heart Failure",
+      "sound_type": "C",
+      "label": 1
+    },
+    {
+      "patient_id": "P14",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP14_Heart Failure,C,A R M,54,M.wav",
+      "file_name": "DP14_Heart Failure,C,A R M,54,M.wav",
+      "diagnosis": "Heart Failure",
+      "sound_type": "C",
+      "label": 1
+    },
+    {
+      "patient_id": "P14",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP14_Heart Failure,C,A R M,54,M.wav",
+      "file_name": "EP14_Heart Failure,C,A R M,54,M.wav",
+      "diagnosis": "Heart Failure",
+      "sound_type": "C",
+      "label": 1
+    },
+    {
+      "patient_id": "P15",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP15_Asthma,E W,P R U,49,F.wav",
+      "file_name": "BP15_Asthma,E W,P R U,49,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P15",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP15_Asthma,E W,P R U,49,F.wav",
+      "file_name": "DP15_Asthma,E W,P R U,49,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P15",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP15_Asthma,E W,P R U,49,F.wav",
+      "file_name": "EP15_Asthma,E W,P R U,49,F.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P20",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP20_Asthma and lung fibrosis,C,A R M,90,M.wav",
+      "file_name": "BP20_Asthma and lung fibrosis,C,A R M,90,M.wav",
+      "diagnosis": "Asthma and lung fibrosis",
+      "sound_type": "C",
+      "label": 1
+    },
+    {
+      "patient_id": "P20",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP20_Asthma and lung fibrosis,C,A R M,90,M.wav",
+      "file_name": "DP20_Asthma and lung fibrosis,C,A R M,90,M.wav",
+      "diagnosis": "Asthma and lung fibrosis",
+      "sound_type": "C",
+      "label": 1
+    },
+    {
+      "patient_id": "P20",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP20_Asthma and lung fibrosis,C,A R M,90,M.wav",
+      "file_name": "EP20_Asthma and lung fibrosis,C,A R M,90,M.wav",
+      "diagnosis": "Asthma and lung fibrosis",
+      "sound_type": "C",
+      "label": 1
+    },
+    {
+      "patient_id": "P28",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP28_BRON,Crep,P L U,68,F.wav",
+      "file_name": "BP28_BRON,Crep,P L U,68,F.wav",
+      "diagnosis": "BRON",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P28",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP28_BRON,Crep,P L U,68,F.wav",
+      "file_name": "DP28_BRON,Crep,P L U,68,F.wav",
+      "diagnosis": "BRON",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P28",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP28_BRON,Crep,P L U,68,F.wav",
+      "file_name": "EP28_BRON,Crep,P L U,68,F.wav",
+      "diagnosis": "BRON",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P32",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP32_N,N,A R L,30,M.wav",
+      "file_name": "BP32_N,N,A R L,30,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P32",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP32_N,N,A R L,30,M.wav",
+      "file_name": "DP32_N,N,A R L,30,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P32",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP32_N,N,A R L,30,M.wav",
+      "file_name": "EP32_N,N,A R L,30,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P38",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP38_Asthma,E W,P R M,38,M.wav",
+      "file_name": "BP38_Asthma,E W,P R M,38,M.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P38",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP38_Asthma,E W,P R M,38,M.wav",
+      "file_name": "DP38_Asthma,E W,P R M,38,M.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P38",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP38_Asthma,E W,P R M,38,M.wav",
+      "file_name": "EP38_Asthma,E W,P R M,38,M.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P45",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP45_heart failure,Crep,P R L ,30,M.wav",
+      "file_name": "BP45_heart failure,Crep,P R L ,30,M.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P45",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP45_heart failure,Crep,P R L ,30,M.wav",
+      "file_name": "DP45_heart failure,Crep,P R L ,30,M.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P45",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP45_heart failure,Crep,P R L ,30,M.wav",
+      "file_name": "EP45_heart failure,Crep,P R L ,30,M.wav",
+      "diagnosis": "heart failure",
+      "sound_type": "Crep",
+      "label": 1
+    },
+    {
+      "patient_id": "P46",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP46_asthma,E W,P L U,41,F.wav",
+      "file_name": "BP46_asthma,E W,P L U,41,F.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P46",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP46_asthma,E W,P L U,41,F.wav",
+      "file_name": "DP46_asthma,E W,P L U,41,F.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P46",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP46_asthma,E W,P L U,41,F.wav",
+      "file_name": "EP46_asthma,E W,P L U,41,F.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P47",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP47_asthma,E W,P L M,60,M.wav",
+      "file_name": "BP47_asthma,E W,P L M,60,M.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P47",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP47_asthma,E W,P L M,60,M.wav",
+      "file_name": "DP47_asthma,E W,P L M,60,M.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P47",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP47_asthma,E W,P L M,60,M.wav",
+      "file_name": "EP47_asthma,E W,P L M,60,M.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P53",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP53_asthma,E W,P R M,72,F.wav",
+      "file_name": "BP53_asthma,E W,P R M,72,F.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P53",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP53_asthma,E W,P R M,72,F.wav",
+      "file_name": "DP53_asthma,E W,P R M,72,F.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P53",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP53_asthma,E W,P R M,72,F.wav",
+      "file_name": "EP53_asthma,E W,P R M,72,F.wav",
+      "diagnosis": "asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P73",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP73_N,N,P L L,32,M.wav",
+      "file_name": "BP73_N,N,P L L,32,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P73",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP73_N,N,P L L,32,M.wav",
+      "file_name": "DP73_N,N,P L L,32,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P73",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP73_N,N,P L L,32,M.wav",
+      "file_name": "EP73_N,N,P L L,32,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P75",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP75_N,N,P L U,73,F.wav",
+      "file_name": "BP75_N,N,P L U,73,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P75",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP75_N,N,P L U,73,F.wav",
+      "file_name": "DP75_N,N,P L U,73,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P75",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP75_N,N,P L U,73,F.wav",
+      "file_name": "EP75_N,N,P L U,73,F.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P9",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP9_Asthma,E W,P R L ,59,M.wav",
+      "file_name": "BP9_Asthma,E W,P R L ,59,M.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P9",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP9_Asthma,E W,P R L ,59,M.wav",
+      "file_name": "DP9_Asthma,E W,P R L ,59,M.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P9",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP9_Asthma,E W,P R L ,59,M.wav",
+      "file_name": "EP9_Asthma,E W,P R L ,59,M.wav",
+      "diagnosis": "Asthma",
+      "sound_type": "E W",
+      "label": 1
+    },
+    {
+      "patient_id": "P99",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\BP99_N,N,P R M,50,M.wav",
+      "file_name": "BP99_N,N,P R M,50,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P99",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\DP99_N,N,P R M,50,M.wav",
+      "file_name": "DP99_N,N,P R M,50,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    },
+    {
+      "patient_id": "P99",
+      "file_path": "C:\\Users\\gaura\\.gemini\\antigravity-ide\\scratch\\swasthai\\dataset-lung sounds\\labelled data\\Audio Files\\EP99_N,N,P R M,50,M.wav",
+      "file_name": "EP99_N,N,P R M,50,M.wav",
+      "diagnosis": "N",
+      "sound_type": "N",
+      "label": 0
+    }
+  ]
+}

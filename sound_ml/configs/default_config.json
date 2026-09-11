@@ -1,0 +1,40 @@
+{
+  "project_name": "SwasthAI_Sound_ML",
+  "seed": 42,
+  "paths": {
+    "labelled_dataset": "dataset-lung sounds/labelled data",
+    "unlabelled_dataset": "dataset-lung sounds/unlabelled data",
+    "output_dir": "sound_ml/outputs",
+    "models_dir": "sound_ml/models"
+  },
+  "audio": {
+    "sample_rate": 4000,
+    "target_duration_sec": 5.0,
+    "n_fft": 512,
+    "hop_length": 128,
+    "n_mels": 64,
+    "f_min": 50,
+    "f_max": 2000
+  },
+  "splitting": {
+    "train_ratio": 0.70,
+    "val_ratio": 0.15,
+    "test_ratio": 0.15
+  },
+  "training": {
+    "batch_size": 16,
+    "epochs": 40,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "patience": 10,
+    "use_class_weights": true
+  },
+  "augmentation": {
+    "time_shift_pct": 0.10,
+    "amplitude_scale_min": 0.85,
+    "amplitude_scale_max": 1.15,
+    "freq_mask_param": 8,
+    "time_mask_param": 16,
+    "noise_snr_db": 30.0
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "sample_rate": 4000,
+  "target_duration_sec": 5.0,
+  "n_fft": 512,
+  "hop_length": 128,
+  "n_mels": 64,
+  "f_min": 50,
+  "f_max": 2000
+}
