@@ -80,22 +80,9 @@ KH041-HackWizards/
 │   ├── architecture.md            # Mermaid component architecture
 │   └── other-diagrams/            # Sequence and BLE protocol specifications
 │
-├── screenshots/                   # Application Demonstration
-│   ├── screenshot-1.png           # Live point-of-care screening & telemetry
-│   └── screenshot-2.png           # Risk assessment outcome & clinical referral
-│
 └── data/                          # Data Management & Storage
     └── README.md                  # Offline database architecture & privacy policy
 ```
-
----
-
-## 📱 Application Screenshots
-
-| Live Point-of-Care Screening | Risk Evaluation & Clinical Referral |
-|:---:|:---:|
-| ![Screenshot 1](screenshots/screenshot-1.png) | ![Screenshot 2](screenshots/screenshot-2.png) |
-| *Real-time BLE telemetry, PPG wave, and airway flow* | *Risk category, contributing factors, and PHC referral advisory* |
 
 ---
 

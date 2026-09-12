@@ -74,10 +74,6 @@ KH041-HackWizards/
 │   ├── architecture.md
 │   └── other-diagrams/        # Detailed workflow and protocol diagrams
 │
-├── screenshots/               # Application UI & Screening Screenshots
-│   ├── screenshot-1.png       # Live screening dashboard & BLE data
-│   └── screenshot-2.png       # Screening risk results & recommendations
-│
 └── data/                      # Local storage specifications
     └── README.md
 ```
