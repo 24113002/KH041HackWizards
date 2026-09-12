@@ -6,16 +6,24 @@ class BleConfig {
 
   /// Acceptable device name prefixes for scanning and discovery
   static const List<String> devicePrefixes = [
+    'COPD_Screening',
+    'COPD',
     'SwaasAI_ESP32',
+    'SWASTHAI-ESP32',
     'SwaasAI',
     'Swaas',
     'SwasthAI',
     'SWASTHAI',
     'SWASTH',
+    'ESP32',
+    'ESP',
+    'Screening',
   ];
 
-  /// Primary SwaasAI GATT Service UUID
+  /// Primary SwaasAI GATT Service UUIDs
   static const String serviceUuid = '12345678-1234-1234-1234-1234567890AB';
+  static const String firmwareServiceUuid = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
+  static const String alternateServiceUuid = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
 
   /// Screening Result Characteristic UUID (READ + NOTIFY)
   static const String screeningResultCharacteristicUuid = '12345678-1234-1234-1234-1234567890AC';

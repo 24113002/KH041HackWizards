@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../config/ble_config.dart';
 import '../services/ble_service.dart';
 import '../theme/app_theme.dart';
 
@@ -12,8 +11,34 @@ class DeviceConnectionScreen extends StatefulWidget {
   State<DeviceConnectionScreen> createState() => _DeviceConnectionScreenState();
 }
 
-class _DeviceConnectionScreenState extends State<DeviceConnectionScreen> {
+class _DeviceConnectionScreenState extends State<DeviceConnectionScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  final TextEditingController _ipController = TextEditingController(text: '192.168.4.1');
+  final TextEditingController _portController = TextEditingController(text: '80');
+  bool _isPinging = false;
+  bool _isConnectingWifi = false;
+  String? _pingResult;
   bool _showDebugInfo = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final ble = context.read<BleService>();
+    int initialTab = 0; // 0: Wi-Fi, 1: BLE, 2: Simulator
+    if (ble is AppBleService) {
+      if (ble.transportMode == HardwareTransportMode.ble) initialTab = 1;
+      if (ble.transportMode == HardwareTransportMode.simulator) initialTab = 2;
+    }
+    _tabController = TabController(length: 3, vsync: this, initialIndex: initialTab);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _ipController.dispose();
+    _portController.dispose();
+    super.dispose();
+  }
 
   Color _getStatusColor(BleConnectionState state) {
     switch (state) {
@@ -33,44 +58,83 @@ class _DeviceConnectionScreenState extends State<DeviceConnectionScreen> {
     }
   }
 
-  String _getStatusLabel(BleConnectionState state, bool isSim) {
-    if (isSim) return '🟢 Simulator Active (Ready)';
-    switch (state) {
-      case BleConnectionState.ready:
-        return '🟢 Device Ready';
-      case BleConnectionState.connected:
-        return '🟢 Device Connected';
-      case BleConnectionState.discoveringServices:
-        return '🟡 Discovering Services...';
-      case BleConnectionState.connecting:
-        return '🟡 Connecting...';
-      case BleConnectionState.scanning:
-        return '🟡 Scanning for devices...';
-      case BleConnectionState.receivingResult:
-        return '🔵 Receiving Result...';
-      case BleConnectionState.connectionLost:
-        return '🔴 Connection Lost';
-      case BleConnectionState.error:
-        return '🔴 Connection Error';
-      case BleConnectionState.disconnected:
-        return '🔴 Disconnected';
+  Future<void> _pingEsp32(AppBleService ble) async {
+    setState(() {
+      _isPinging = true;
+      _pingResult = null;
+    });
+
+    final ip = _ipController.text.trim();
+    final port = int.tryParse(_portController.text.trim()) ?? 80;
+    final ok = await ble.wifiService.ping(ip: ip, port: port);
+
+    if (mounted) {
+      setState(() {
+        _isPinging = false;
+        _pingResult = ok
+            ? '🟢 ESP32 Reachable (${ble.wifiService.lastPingMs ?? 15}ms latency)'
+            : '🔴 ESP32 Unreachable at http://$ip:$port';
+      });
+    }
+  }
+
+  Future<void> _connectWifi(AppBleService ble) async {
+    setState(() => _isConnectingWifi = true);
+    final ip = _ipController.text.trim();
+    final port = int.tryParse(_portController.text.trim()) ?? 80;
+
+    final success = await ble.connectWifi(ip: ip, port: port);
+    if (mounted) {
+      setState(() => _isConnectingWifi = false);
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Connected to ESP32 over Wi-Fi ($ip)!'),
+            backgroundColor: AppTheme.riskLow,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(ble.wifiService.errorMessage ?? 'Failed to connect via Wi-Fi'),
+            backgroundColor: AppTheme.riskCritical,
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final ble = context.watch<BleService>();
+    final appBle = ble is AppBleService ? ble : null;
     final state = ble.connectionState;
     final isReadyOrConnected = state == BleConnectionState.ready || state == BleConnectionState.connected;
-    final isScanning = state == BleConnectionState.scanning;
-    final isBusy = isScanning || state == BleConnectionState.connecting || state == BleConnectionState.receivingResult;
     final statusColor = _getStatusColor(state);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'SwaasAI Device Connection',
+          'Hardware Connection',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: AppTheme.primaryTeal,
+          labelColor: AppTheme.primaryTeal,
+          unselectedLabelColor: AppTheme.textMuted,
+          onTap: (index) {
+            if (appBle != null) {
+              if (index == 0) appBle.switchToWifiMode();
+              if (index == 1) appBle.switchToBleMode();
+              if (index == 2) appBle.toggleSimulatorMode(true);
+            }
+          },
+          tabs: const [
+            Tab(icon: Icon(Icons.wifi), text: 'Wi-Fi Hotspot'),
+            Tab(icon: Icon(Icons.bluetooth), text: 'Bluetooth BLE'),
+            Tab(icon: Icon(Icons.laptop_chromebook), text: 'Simulator'),
+          ],
         ),
         actions: [
           IconButton(
@@ -78,12 +142,8 @@ class _DeviceConnectionScreenState extends State<DeviceConnectionScreen> {
               _showDebugInfo ? Icons.bug_report : Icons.bug_report_outlined,
               color: _showDebugInfo ? AppTheme.primaryTeal : AppTheme.textMuted,
             ),
-            tooltip: 'Toggle Developer & Debug Panel',
-            onPressed: () {
-              setState(() {
-                _showDebugInfo = !_showDebugInfo;
-              });
-            },
+            tooltip: 'Toggle Debug Panel',
+            onPressed: () => setState(() => _showDebugInfo = !_showDebugInfo),
           ),
         ],
       ),
@@ -92,7 +152,7 @@ class _DeviceConnectionScreenState extends State<DeviceConnectionScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Device Header Card
+            // Status Header Card
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -110,411 +170,398 @@ class _DeviceConnectionScreenState extends State<DeviceConnectionScreen> {
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      ble.isSimulatorMode ? Icons.sensors : Icons.bluetooth,
+                      appBle?.isWifiMode == true
+                          ? Icons.wifi
+                          : (ble.isSimulatorMode ? Icons.sensors : Icons.bluetooth),
                       size: 36,
                       color: statusColor,
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  Text(
-                    _getStatusLabel(state, ble.isSimulatorMode),
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: statusColor,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    ble.connectedDeviceName ?? BleConfig.targetDeviceName,
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textLight),
-                    textAlign: TextAlign.center,
-                  ),
                   const SizedBox(height: 12),
-
-                  // Service & Characteristic Status Rows
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: AppTheme.surfaceDark,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Service (GATT):', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                            Row(
-                              children: [
-                                Icon(
-                                  isReadyOrConnected ? Icons.check_circle : Icons.radio_button_unchecked,
-                                  size: 14,
-                                  color: isReadyOrConnected ? AppTheme.riskLow : AppTheme.textMuted,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  isReadyOrConnected ? 'Ready' : 'Not Connected',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: isReadyOrConnected ? AppTheme.riskLow : AppTheme.textMuted,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Characteristic (READ/NOTIFY):', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                            Row(
-                              children: [
-                                Icon(
-                                  isReadyOrConnected ? Icons.check_circle : Icons.radio_button_unchecked,
-                                  size: 14,
-                                  color: isReadyOrConnected ? AppTheme.riskLow : AppTheme.textMuted,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  isReadyOrConnected ? 'Ready' : 'Not Connected',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: isReadyOrConnected ? AppTheme.riskLow : AppTheme.textMuted,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                  Text(
+                    isReadyOrConnected
+                        ? '🟢 Hardware Connected & Streaming'
+                        : (state == BleConnectionState.connecting ? '🟡 Connecting...' : '🔴 Device Disconnected'),
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: statusColor),
                   ),
-
-                  if (ble.errorMessage != null) ...[
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: AppTheme.riskCritical.withAlpha(25),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.warning_amber_rounded, size: 16, color: AppTheme.riskCritical),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              ble.errorMessage!,
-                              style: const TextStyle(fontSize: 12, color: AppTheme.riskCritical),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-
-                  const SizedBox(height: 16),
-
-                  // Action Buttons
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    alignment: WrapAlignment.center,
-                    children: [
-                      if (isReadyOrConnected) ...[
-                        ElevatedButton.icon(
-                          onPressed: isBusy
-                              ? null
-                              : () async {
-                                  final result = await ble.readLatestResult();
-                                  if (context.mounted) {
-                                    if (result != null) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('Screening result read: Record ${result.id} (${result.formattedStatus})'),
-                                          backgroundColor: AppTheme.riskLow,
-                                        ),
-                                      );
-                                    } else {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('No completed result available on device.'),
-                                          backgroundColor: AppTheme.riskModerate,
-                                        ),
-                                      );
-                                    }
-                                  }
-                                },
-                          icon: state == BleConnectionState.receivingResult
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                )
-                              : const Icon(Icons.download_rounded),
-                          label: const Text('Read Latest Result'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryTeal,
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                          ),
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: () => ble.disconnect(),
-                          icon: const Icon(Icons.link_off, size: 18),
-                          label: const Text('Disconnect'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppTheme.riskCritical,
-                            side: const BorderSide(color: AppTheme.riskCritical),
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                          ),
-                        ),
-                      ] else ...[
-                        ElevatedButton.icon(
-                          onPressed: isScanning ? null : () => ble.startScan(),
-                          icon: isScanning
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                )
-                              : const Icon(Icons.search),
-                          label: Text(isScanning ? 'Scanning...' : 'Scan for SwaasAI ESP32'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryTeal,
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                          ),
-                        ),
-                      ],
-                    ],
+                  const SizedBox(height: 4),
+                  Text(
+                    ble.connectedDeviceName ?? 'Not connected',
+                    style: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 20),
 
-            // 2. Mode Selector Pill (Physical Hardware vs Simulator)
-            Container(
-              padding: const EdgeInsets.all(12),
+            // Tab-specific View
+            if (_tabController.index == 0) ...[
+              _buildWifiSection(appBle),
+            ] else if (_tabController.index == 1) ...[
+              _buildBleSection(ble),
+            ] else ...[
+              _buildSimulatorSection(ble),
+            ],
+
+            // Debug Information
+            if (_showDebugInfo) ...[
+              const SizedBox(height: 20),
+              _buildDebugSection(ble, appBle),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWifiSection(AppBleService? appBle) {
+    final wifi = appBle?.wifiService;
+    final isConnected = wifi?.isConnected ?? false;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Instructions Card
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryTeal.withAlpha(15),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppTheme.primaryTeal.withAlpha(60)),
+          ),
+          child: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.info_outline, color: AppTheme.primaryTeal, size: 18),
+                  SizedBox(width: 8),
+                  Text(
+                    'How to connect ESP32 over Wi-Fi:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.textLight),
+                  ),
+                ],
+              ),
+              SizedBox(height: 6),
+              Text(
+                '1. In your phone\'s Wi-Fi settings, connect to the ESP32 network (e.g. SwasthAI_Screener or COPD_Screening).\n'
+                '2. Default IP is 192.168.4.1 (ESP32 SoftAP).\n'
+                '3. Tap "Connect via Wi-Fi" below to start streaming vitals and spirometry.',
+                style: TextStyle(fontSize: 12, color: AppTheme.textMuted, height: 1.4),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // IP and Port Configuration
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceElevated,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'ESP32 Network Endpoint',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.textLight),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: TextField(
+                      controller: _ipController,
+                      style: const TextStyle(color: AppTheme.textLight, fontFamily: 'monospace'),
+                      decoration: InputDecoration(
+                        labelText: 'IP Address',
+                        labelStyle: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                        filled: true,
+                        fillColor: AppTheme.surfaceDark,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 1,
+                    child: TextField(
+                      controller: _portController,
+                      keyboardType: TextInputType.number,
+                      style: const TextStyle(color: AppTheme.textLight, fontFamily: 'monospace'),
+                      decoration: InputDecoration(
+                        labelText: 'Port',
+                        labelStyle: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                        filled: true,
+                        fillColor: AppTheme.surfaceDark,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // Quick IP presets
+              Wrap(
+                spacing: 8,
+                children: [
+                  ActionChip(
+                    label: const Text('192.168.4.1 (SoftAP)', style: TextStyle(fontSize: 11)),
+                    onPressed: () => setState(() => _ipController.text = '192.168.4.1'),
+                  ),
+                  ActionChip(
+                    label: const Text('192.168.1.184 (Local)', style: TextStyle(fontSize: 11)),
+                    onPressed: () => setState(() => _ipController.text = '192.168.1.184'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              if (_pingResult != null) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceDark,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(_pingResult!, style: const TextStyle(fontSize: 12, color: AppTheme.textLight)),
+                ),
+                const SizedBox(height: 14),
+              ],
+
+              // Action Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: isConnected
+                          ? () => wifi?.disconnect()
+                          : (_isConnectingWifi || appBle == null ? null : () => _connectWifi(appBle)),
+                      icon: _isConnectingWifi
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : Icon(isConnected ? Icons.link_off : Icons.wifi),
+                      label: Text(isConnected ? 'Disconnect Wi-Fi' : (_isConnectingWifi ? 'Connecting...' : 'Connect via Wi-Fi')),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isConnected ? AppTheme.riskCritical : AppTheme.primaryTeal,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  OutlinedButton.icon(
+                    onPressed: _isPinging || appBle == null ? null : () => _pingEsp32(appBle),
+                    icon: _isPinging
+                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryTeal))
+                        : const Icon(Icons.network_ping, size: 18),
+                    label: const Text('Ping'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.primaryTeal,
+                      side: const BorderSide(color: AppTheme.primaryTeal),
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBleSection(BleService ble) {
+    final isScanning = ble.connectionState == BleConnectionState.scanning;
+    final isConnected = ble.connectionState == BleConnectionState.ready || ble.connectionState == BleConnectionState.connected;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Nearby Bluetooth Devices',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textLight),
+            ),
+            ElevatedButton.icon(
+              onPressed: isScanning ? null : () => ble.startScan(),
+              icon: isScanning
+                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.search, size: 16),
+              label: Text(isScanning ? 'Scanning...' : 'Scan BLE'),
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryTeal),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        if (ble.discoveredDevices.isEmpty) ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceElevated,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Column(
+              children: [
+                Icon(Icons.bluetooth_searching, size: 36, color: AppTheme.textMuted),
+                SizedBox(height: 8),
+                Text('No Bluetooth devices found yet.', style: TextStyle(color: AppTheme.textMuted, fontSize: 13)),
+                SizedBox(height: 4),
+                Text('Tap "Scan BLE" to search for COPD_Screening / ESP32.', style: TextStyle(color: AppTheme.textMuted, fontSize: 11)),
+              ],
+            ),
+          ),
+        ] else ...[
+          ...ble.discoveredDevices.map((dev) {
+            final isScreener = dev.name.toUpperCase().contains('COPD') ||
+                dev.name.toUpperCase().contains('SWAAS') ||
+                dev.name.toUpperCase().contains('SWASTH') ||
+                dev.name.toUpperCase().contains('ESP32') ||
+                dev.id.toUpperCase() == '1C:C3:AB:B3:03:A2';
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: AppTheme.surfaceElevated,
+                color: isScreener ? AppTheme.primaryTeal.withAlpha(20) : AppTheme.surfaceElevated,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: isScreener ? AppTheme.primaryTeal : Colors.white10),
               ),
               child: Row(
                 children: [
-                  Icon(
-                    ble.isSimulatorMode ? Icons.laptop_chromebook : Icons.bluetooth_connected,
-                    color: AppTheme.primaryTeal,
-                    size: 20,
+                  CircleAvatar(
+                    backgroundColor: isScreener ? AppTheme.primaryTeal : Colors.grey.withAlpha(40),
+                    child: Icon(isScreener ? Icons.medical_services_outlined : Icons.bluetooth, color: Colors.white, size: 18),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          ble.isSimulatorMode ? 'Hardware Simulator Active' : 'Physical BLE Hardware Mode',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.textLight),
+                          dev.name,
+                          style: TextStyle(
+                            fontWeight: isScreener ? FontWeight.bold : FontWeight.normal,
+                            color: AppTheme.textLight,
+                            fontSize: 14,
+                          ),
                         ),
-                        Text(
-                          ble.isSimulatorMode
-                              ? 'Simulating SwaasAI ESP32 packets'
-                              : 'Listening to SwaasAI_ESP32 GATT service',
-                          style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
-                        ),
+                        Text('${dev.id} • ${dev.signalStrengthDescription}', style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
                       ],
                     ),
                   ),
-                  Switch(
-                    value: !ble.isSimulatorMode,
-                    activeTrackColor: AppTheme.primaryTeal.withAlpha(150),
-                    activeThumbColor: AppTheme.primaryTeal,
-                    onChanged: (val) => ble.toggleSimulatorMode(!val),
+                  ElevatedButton(
+                    onPressed: () => ble.connectToDevice(dev),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryTeal),
+                    child: const Text('Connect', style: TextStyle(fontSize: 12)),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 20),
+            );
+          }),
+        ],
 
-            // 3. Developer & Debug Information Panel (Collapsible)
-            if (_showDebugInfo) ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceDark,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppTheme.accentIndigo.withAlpha(100)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.terminal, size: 18, color: AppTheme.accentIndigo),
-                        SizedBox(width: 8),
-                        Text(
-                          'Developer & BLE Debug Information',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.textLight),
-                        ),
-                      ],
-                    ),
-                    const Divider(color: AppTheme.surfaceElevated, height: 20),
-                    _buildDebugRow('Data Source:', ble.isSimulatorMode ? 'Sensor Simulator' : 'ESP32 BLE Hardware'),
-                    _buildDebugRow('Target Device Name:', BleConfig.targetDeviceName),
-                    _buildDebugRow('Service UUID:', BleConfig.serviceUuid),
-                    _buildDebugRow('Characteristic UUID:', BleConfig.screeningResultCharacteristicUuid),
-                    _buildDebugRow('GATT Properties:', 'READ + NOTIFY (No Write)'),
-                    _buildDebugRow('Connection State:', ble.connectionState.name),
-                    _buildDebugRow('Last Raw Packet:', ble.lastRawPacket ?? 'None received yet'),
-                    _buildDebugRow(
-                      'Last Packet Time:',
-                      ble.lastPacketTime != null
-                          ? DateFormat('HH:mm:ss').format(ble.lastPacketTime!)
-                          : 'N/A',
-                    ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'Simulator Test Triggers:',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        OutlinedButton(
-                          onPressed: () {
-                            ble.emitMockScreeningResult(rawPacket: 'R01,42350,97,1860,42,MODERATE');
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Emitted Test Packet: R01 (MODERATE)')),
-                            );
-                          },
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: AppTheme.primaryTeal),
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          ),
-                          child: const Text('Emit Valid Packet (R01)', style: TextStyle(fontSize: 11, color: AppTheme.primaryTeal)),
-                        ),
-                        OutlinedButton(
-                          onPressed: () {
-                            ble.emitMockScreeningResult(rawPacket: 'R02,39120,NA,1735,NA,INCOMPLETE');
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Emitted Incomplete Packet: R02 (NA fields)')),
-                            );
-                          },
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: AppTheme.riskModerate),
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          ),
-                          child: const Text('Emit Incomplete Packet (R02)', style: TextStyle(fontSize: 11, color: AppTheme.riskModerate)),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+        if (isConnected) ...[
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () => ble.disconnect(),
+            icon: const Icon(Icons.link_off, color: AppTheme.riskCritical, size: 18),
+            label: const Text('Disconnect BLE', style: TextStyle(color: AppTheme.riskCritical)),
+            style: OutlinedButton.styleFrom(side: const BorderSide(color: AppTheme.riskCritical)),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSimulatorSection(BleService ble) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceElevated,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Hardware Simulation Suite',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.textLight),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Simulate patient spirometry blows, pulse oximeter vitals, and cough acoustics without physical hardware.',
+            style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              ElevatedButton.icon(
+                onPressed: () => ble.triggerSimulatorBlow(simulateObstruction: false),
+                icon: const Icon(Icons.air, size: 16),
+                label: const Text('Simulate Normal Blow (FVC 3.6L)'),
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryTeal),
               ),
-              const SizedBox(height: 20),
-            ],
-
-            // 4. Discovered Devices List
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Available Nearby Devices',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textLight),
-                ),
-                if (isScanning)
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryTeal),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 10),
-
-            if (ble.discoveredDevices.isEmpty) ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceElevated,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.bluetooth_searching,
-                      size: 40,
-                      color: AppTheme.textMuted.withAlpha(80),
-                    ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'No SwaasAI ESP32 devices found',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textLight, fontSize: 14),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Ensure your ESP32 board is powered on and within range.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
-                    ),
-                  ],
-                ),
+              ElevatedButton.icon(
+                onPressed: () => ble.triggerSimulatorBlow(simulateObstruction: true),
+                icon: const Icon(Icons.warning_amber_rounded, size: 16),
+                label: const Text('Simulate Obstructive Blow (COPD)'),
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.riskModerate),
               ),
-            ] else ...[
-              ...ble.discoveredDevices.map((dev) {
-                final isMatchingName = dev.name.toUpperCase().contains('SWAAS') ||
-                    dev.name.toUpperCase().contains('SWASTH') ||
-                    dev.name.toUpperCase().contains('ESP32');
-
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    leading: CircleAvatar(
-                      backgroundColor: isMatchingName ? AppTheme.primaryTeal.withAlpha(30) : Colors.grey.withAlpha(30),
-                      child: Icon(
-                        Icons.bluetooth,
-                        color: isMatchingName ? AppTheme.primaryTeal : Colors.grey,
-                      ),
-                    ),
-                    title: Text(
-                      dev.name,
-                      style: TextStyle(
-                        fontWeight: isMatchingName ? FontWeight.bold : FontWeight.normal,
-                        color: AppTheme.textLight,
-                      ),
-                    ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Row(
-                        children: [
-                          Icon(Icons.signal_cellular_alt, size: 14, color: AppTheme.riskLow),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Signal: ${dev.signalStrengthDescription} (${dev.rssi} dBm)',
-                            style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
-                          ),
-                        ],
-                      ),
-                    ),
-                    trailing: ElevatedButton(
-                      onPressed: isBusy ? null : () => ble.connectToDevice(dev),
-                      style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryTeal),
-                      child: const Text('Connect'),
-                    ),
-                  ),
-                );
-              }),
+              ElevatedButton.icon(
+                onPressed: () => ble.triggerSimulatedCough(),
+                icon: const Icon(Icons.graphic_eq, size: 16),
+                label: const Text('Trigger Cough Event'),
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentIndigo),
+              ),
             ],
-          ],
-        ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDebugSection(BleService ble, AppBleService? appBle) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceDark,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.accentIndigo.withAlpha(100)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.terminal, size: 18, color: AppTheme.accentIndigo),
+              SizedBox(width: 8),
+              Text(
+                'Debug Information',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.textLight),
+              ),
+            ],
+          ),
+          const Divider(color: AppTheme.surfaceElevated, height: 20),
+          _buildDebugRow('Transport Mode:', appBle?.transportMode.name ?? 'BLE'),
+          _buildDebugRow('Connection State:', ble.connectionState.name),
+          _buildDebugRow('Connected Device:', ble.connectedDeviceName ?? 'None'),
+          _buildDebugRow('Last Raw Packet:', ble.lastRawPacket ?? 'None'),
+          _buildDebugRow(
+            'Last Packet Time:',
+            ble.lastPacketTime != null ? DateFormat('HH:mm:ss').format(ble.lastPacketTime!) : 'N/A',
+          ),
+        ],
       ),
     );
   }
@@ -527,16 +574,10 @@ class _DeviceConnectionScreenState extends State<DeviceConnectionScreen> {
         children: [
           SizedBox(
             width: 140,
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 11, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
-            ),
+            child: Text(label, style: const TextStyle(fontSize: 11, color: AppTheme.textMuted, fontWeight: FontWeight.w600)),
           ),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 11, color: AppTheme.textLight, fontFamily: 'monospace'),
-            ),
+            child: Text(value, style: const TextStyle(fontSize: 11, color: AppTheme.textLight, fontFamily: 'monospace')),
           ),
         ],
       ),

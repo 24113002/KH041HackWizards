@@ -1,8 +1,9 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
+import 'package:universal_io/io.dart';
 import 'controllers/current_screening_controller.dart';
 import 'controllers/patient_provider.dart';
 import 'controllers/screening_history_controller.dart';
@@ -11,7 +12,6 @@ import 'repositories/patient_repository.dart';
 import 'repositories/screening_repository.dart';
 import 'repositories/sync_repository.dart';
 import 'screens/home_screen.dart';
-import 'services/backend_api_service.dart';
 import 'services/ble_service.dart';
 import 'services/sensor_service.dart';
 import 'theme/app_theme.dart';
@@ -19,8 +19,10 @@ import 'theme/app_theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize SQLite FFI for desktop support if running on desktop or test environment
-  if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+  // Initialize SQLite FFI for web or desktop environments
+  if (kIsWeb) {
+    databaseFactory = databaseFactoryFfiWeb;
+  } else if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
@@ -65,7 +67,11 @@ class SwasthaiApp extends StatelessWidget {
         Provider<PatientRepository>.value(value: patientRepository),
         Provider<ScreeningRepository>.value(value: screeningRepository),
         Provider<SensorService>.value(value: sensorService),
-        ChangeNotifierProvider<BleService>(create: (_) => AppBleService()),
+        ChangeNotifierProvider<BleService>(
+          create: (_) => AppBleService(
+            initialSimulatorMode: kIsWeb || (!Platform.isAndroid && !Platform.isIOS),
+          ),
+        ),
         ChangeNotifierProvider(create: (_) => PatientProvider(repository: patientRepository)),
         ChangeNotifierProvider(create: (_) => CurrentScreeningController()),
         ChangeNotifierProvider(create: (_) => ScreeningHistoryController(repository: screeningRepository)),

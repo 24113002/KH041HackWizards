@@ -146,48 +146,96 @@ class _BleScanSheetState extends State<BleScanSheet> {
                       itemCount: ble.discoveredDevices.length,
                       itemBuilder: (ctx, idx) {
                         final dev = ble.discoveredDevices[idx];
-                        final isSwaas = dev.name.toUpperCase().contains('SWAAS') ||
+                        final isSwaas = dev.name.toUpperCase().contains('COPD') ||
+                            dev.name.toUpperCase().contains('SWAAS') ||
                             dev.name.toUpperCase().contains('SWASTH') ||
-                            dev.name.toUpperCase().contains('ESP32');
+                            dev.name.toUpperCase().contains('ESP32') ||
+                            dev.id.toUpperCase() == '1C:C3:AB:B3:03:A2';
 
-                        return ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: CircleAvatar(
-                            backgroundColor: isSwaas ? AppTheme.primaryTeal.withAlpha(30) : Colors.grey.withAlpha(30),
-                            child: Icon(
-                              Icons.devices,
-                              color: isSwaas ? AppTheme.primaryTeal : Colors.grey,
-                              size: 20,
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isSwaas ? AppTheme.primaryTeal.withAlpha(20) : AppTheme.surfaceElevated,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSwaas ? AppTheme.primaryTeal : Colors.white10,
+                              width: isSwaas ? 1.5 : 1.0,
                             ),
                           ),
-                          title: Text(
-                            dev.name,
-                            style: TextStyle(
-                              color: isSwaas ? AppTheme.textLight : AppTheme.textMuted,
-                              fontWeight: isSwaas ? FontWeight.bold : FontWeight.normal,
-                            ),
-                          ),
-                          subtitle: Text(
-                            '${dev.id} • Signal: ${dev.signalStrengthDescription} (${dev.rssi} dBm)',
-                            style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
-                          ),
-                          trailing: ElevatedButton(
-                            onPressed: () async {
-                              await ble.connectToDevice(dev);
-                              if (context.mounted) {
-                                Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Connecting to ${dev.name}...'),
-                                  ),
-                                );
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryTeal,
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                            ),
-                            child: const Text('Connect', style: TextStyle(fontSize: 12)),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: isSwaas ? AppTheme.primaryTeal : Colors.grey.withAlpha(40),
+                                child: Icon(
+                                  isSwaas ? Icons.medical_services_outlined : Icons.bluetooth,
+                                  color: isSwaas ? Colors.white : Colors.grey,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Flexible(
+                                          child: Text(
+                                            dev.name,
+                                            style: TextStyle(
+                                              color: isSwaas ? AppTheme.textLight : AppTheme.textMuted,
+                                              fontWeight: isSwaas ? FontWeight.bold : FontWeight.normal,
+                                              fontSize: 14,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        if (isSwaas) ...[
+                                          const SizedBox(width: 6),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: AppTheme.primaryTeal,
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: const Text(
+                                              'Screener',
+                                              style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${dev.id} • ${dev.signalStrengthDescription} (${dev.rssi} dBm)',
+                                      style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              ElevatedButton(
+                                onPressed: () async {
+                                  await ble.connectToDevice(dev);
+                                  if (context.mounted) {
+                                    Navigator.pop(context);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Connecting to ${dev.name}...'),
+                                      ),
+                                    );
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isSwaas ? AppTheme.primaryTeal : AppTheme.surfaceElevated,
+                                  foregroundColor: isSwaas ? Colors.white : AppTheme.textLight,
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                ),
+                                child: const Text('Connect', style: TextStyle(fontSize: 12)),
+                              ),
+                            ],
                           ),
                         );
                       },

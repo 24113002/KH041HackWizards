@@ -1,9 +1,10 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
+import 'package:universal_io/io.dart';
 import '../models/patient_model.dart';
 import '../models/screening_session_model.dart';
 
@@ -20,13 +21,17 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDB(String filePath) async {
-    if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+    if (kIsWeb) {
+      databaseFactory = databaseFactoryFfiWeb;
+    } else if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       sqfliteFfiInit();
       databaseFactory = databaseFactoryFfi;
     }
 
     String path;
-    if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+    if (kIsWeb) {
+      path = filePath;
+    } else if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       try {
         final appDocDir = await getApplicationDocumentsDirectory();
         path = join(appDocDir.path, 'SwasthaiData', filePath);
@@ -42,17 +47,22 @@ class DatabaseHelper {
       path = join(dbPath, filePath);
     }
 
-    return await openDatabase(
+    return await databaseFactory.openDatabase(
       path,
-      version: 3,
-      onCreate: _createDB,
-      onUpgrade: _onUpgradeDB,
+      options: OpenDatabaseOptions(
+        version: 3,
+        onCreate: _createDB,
+        onUpgrade: _onUpgradeDB,
+        onOpen: (db) async {
+          await _ensureColumns(db);
+        },
+      ),
     );
   }
 
   Future<void> _createDB(Database db, int version) async {
     await db.execute('''
-      CREATE TABLE patients (
+      CREATE TABLE IF NOT EXISTS patients (
         id TEXT PRIMARY KEY,
         backend_id INTEGER,
         full_name TEXT NOT NULL,
@@ -72,7 +82,7 @@ class DatabaseHelper {
     ''');
 
     await db.execute('''
-      CREATE TABLE screenings (
+      CREATE TABLE IF NOT EXISTS screenings (
         id TEXT PRIMARY KEY,
         backend_id INTEGER,
         patient_id TEXT NOT NULL,
@@ -101,30 +111,81 @@ class DatabaseHelper {
   }
 
   Future<void> _onUpgradeDB(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      try {
-        await db.execute('ALTER TABLE patients ADD COLUMN full_name TEXT');
-        await db.execute('ALTER TABLE patients ADD COLUMN village TEXT');
-        await db.execute('ALTER TABLE patients ADD COLUMN occupation TEXT');
-        await db.execute('ALTER TABLE patients ADD COLUMN smoking_status TEXT');
-        await db.execute('ALTER TABLE patients ADD COLUMN updated_at TEXT');
-      } catch (_) {}
-      try {
-        await db.execute('ALTER TABLE screenings ADD COLUMN started_at TEXT');
-        await db.execute('ALTER TABLE screenings ADD COLUMN completed_at TEXT');
-        await db.execute('ALTER TABLE screenings ADD COLUMN status TEXT');
-        await db.execute('ALTER TABLE screenings ADD COLUMN risk_category TEXT');
-      } catch (_) {}
-    }
-    if (oldVersion < 3) {
-      try {
+    await _ensureColumns(db);
+  }
+
+  /// Self-healing migration checking existing tables and adding any missing columns
+  Future<void> _ensureColumns(Database db) async {
+    try {
+      final patientCols = await _getTableColumns(db, 'patients');
+      if (!patientCols.contains('backend_id')) {
         await db.execute('ALTER TABLE patients ADD COLUMN backend_id INTEGER');
-      } catch (_) {}
-      try {
-        await db.execute('ALTER TABLE screenings ADD COLUMN backend_id INTEGER');
-        await db.execute('ALTER TABLE screenings ADD COLUMN patient_backend_id INTEGER');
-      } catch (_) {}
+      }
+      if (!patientCols.contains('full_name')) {
+        await db.execute('ALTER TABLE patients ADD COLUMN full_name TEXT');
+      }
+      if (!patientCols.contains('name')) {
+        await db.execute('ALTER TABLE patients ADD COLUMN name TEXT');
+      }
+      if (!patientCols.contains('village')) {
+        await db.execute('ALTER TABLE patients ADD COLUMN village TEXT');
+      }
+      if (!patientCols.contains('occupation')) {
+        await db.execute('ALTER TABLE patients ADD COLUMN occupation TEXT');
+      }
+      if (!patientCols.contains('smoking_status')) {
+        await db.execute('ALTER TABLE patients ADD COLUMN smoking_status TEXT');
+      }
+      if (!patientCols.contains('updated_at')) {
+        await db.execute('ALTER TABLE patients ADD COLUMN updated_at TEXT');
+      }
+      if (!patientCols.contains('height_cm')) {
+        await db.execute('ALTER TABLE patients ADD COLUMN height_cm REAL');
+      }
+      if (!patientCols.contains('weight_kg')) {
+        await db.execute('ALTER TABLE patients ADD COLUMN weight_kg REAL');
+      }
+      if (!patientCols.contains('phone')) {
+        await db.execute('ALTER TABLE patients ADD COLUMN phone TEXT');
+      }
+      if (!patientCols.contains('medical_history')) {
+        await db.execute('ALTER TABLE patients ADD COLUMN medical_history TEXT');
+      }
+    } catch (e) {
+      debugPrint('[DatabaseHelper] Patient table schema verification note: $e');
     }
+
+    try {
+      final screeningCols = await _getTableColumns(db, 'screenings');
+      if (!screeningCols.contains('backend_id')) {
+        await db.execute('ALTER TABLE screenings ADD COLUMN backend_id INTEGER');
+      }
+      if (!screeningCols.contains('patient_backend_id')) {
+        await db.execute('ALTER TABLE screenings ADD COLUMN patient_backend_id INTEGER');
+      }
+      if (!screeningCols.contains('started_at')) {
+        await db.execute('ALTER TABLE screenings ADD COLUMN started_at TEXT');
+      }
+      if (!screeningCols.contains('completed_at')) {
+        await db.execute('ALTER TABLE screenings ADD COLUMN completed_at TEXT');
+      }
+      if (!screeningCols.contains('status')) {
+        await db.execute('ALTER TABLE screenings ADD COLUMN status TEXT');
+      }
+      if (!screeningCols.contains('risk_category')) {
+        await db.execute('ALTER TABLE screenings ADD COLUMN risk_category TEXT');
+      }
+      if (!screeningCols.contains('full_payload_json')) {
+        await db.execute('ALTER TABLE screenings ADD COLUMN full_payload_json TEXT');
+      }
+    } catch (e) {
+      debugPrint('[DatabaseHelper] Screening table schema verification note: $e');
+    }
+  }
+
+  Future<Set<String>> _getTableColumns(Database db, String tableName) async {
+    final info = await db.rawQuery('PRAGMA table_info($tableName)');
+    return info.map((row) => (row['name'] as String).toLowerCase()).toSet();
   }
 
 

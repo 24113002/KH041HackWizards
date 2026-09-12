@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:universal_io/io.dart';
 import '../config/ble_config.dart';
 import '../models/ble_device_model.dart';
 import '../models/sensor_data_model.dart';
@@ -10,6 +12,13 @@ import '../models/sensor_reading_model.dart';
 import '../models/swaas_ai_ble_result.dart';
 import 'sensor_data_parser.dart';
 import 'swaas_ai_packet_parser.dart';
+import 'wifi_device_service.dart';
+
+enum HardwareTransportMode {
+  ble,
+  wifi,
+  simulator,
+}
 
 enum BleConnectionState {
   disconnected,
@@ -202,7 +211,21 @@ class RealBleService extends ChangeNotifier implements BleService {
       _discoveredDevices.clear();
       _errorMessage = null;
 
-      // 1. Verify Bluetooth Hardware Support
+      // 1. Request Runtime Permissions on Android (Android 11 requires Location permission for BLE scan)
+      if (!kIsWeb && Platform.isAndroid) {
+        try {
+          final statuses = await [
+            Permission.location,
+            Permission.bluetoothScan,
+            Permission.bluetoothConnect,
+          ].request();
+          debugPrint('[RealBleService] Permission request results: $statuses');
+        } catch (pe) {
+          debugPrint('[RealBleService] Permission request notice: $pe');
+        }
+      }
+
+      // 2. Verify Bluetooth Hardware Support
       if (await FlutterBluePlus.isSupported == false) {
         _setConnectionState(
           BleConnectionState.error,
@@ -211,7 +234,7 @@ class RealBleService extends ChangeNotifier implements BleService {
         return;
       }
 
-      // 2. Verify Bluetooth Power State
+      // 3. Verify Bluetooth Power State
       final adapterState = await FlutterBluePlus.adapterState.first;
       if (adapterState != BluetoothAdapterState.on) {
         _setConnectionState(
@@ -223,45 +246,87 @@ class RealBleService extends ChangeNotifier implements BleService {
 
       _setConnectionState(BleConnectionState.scanning);
 
+      // Only retrieve bonded/system devices if they belong to SwasthAI / ESP32
+      try {
+        final systemDevs = await FlutterBluePlus.systemDevices([]);
+        final bondedDevs = await FlutterBluePlus.bondedDevices;
+        final allKnown = {...systemDevs, ...bondedDevs};
+        for (final dev in allKnown) {
+          final devName = dev.platformName.isNotEmpty ? dev.platformName : dev.advName;
+          final isEsp = dev.remoteId.str.toUpperCase() == '1C:C3:AB:B3:03:A2' ||
+              BleConfig.devicePrefixes.any((p) => devName.toLowerCase().contains(p.toLowerCase()));
+          if (isEsp) {
+            final model = BleDeviceModel(
+              id: dev.remoteId.str,
+              name: devName.isNotEmpty ? devName : 'SWASTHAI-ESP32',
+              rssi: -50,
+              platformDevice: dev,
+            );
+            if (!_discoveredDevices.any((d) => d.id == model.id)) {
+              _discoveredDevices.add(model);
+            }
+          }
+        }
+        if (_discoveredDevices.isNotEmpty) notifyListeners();
+      } catch (e) {
+        debugPrint('[RealBleService] systemDevices check note: $e');
+      }
+
       _scanSubscription?.cancel();
       _scanSubscription = FlutterBluePlus.scanResults.listen((results) {
         for (final r in results) {
-          final devName = r.device.platformName.isNotEmpty
+          final rawName = r.device.platformName.isNotEmpty
               ? r.device.platformName
-              : r.advertisementData.advName;
+              : (r.advertisementData.advName.isNotEmpty ? r.advertisementData.advName : r.device.advName);
 
+          final isKnownMac = r.device.remoteId.str.toUpperCase() == '1C:C3:AB:B3:03:A2';
           final matchesPrefix = BleConfig.devicePrefixes.any(
-            (prefix) => devName.toLowerCase().startsWith(prefix.toLowerCase()),
+            (prefix) => rawName.toLowerCase().contains(prefix.toLowerCase()),
           );
-
           final matchesService = r.advertisementData.serviceUuids.any(
-            (uuid) =>
-                uuid.toString().toLowerCase() == BleConfig.serviceUuid.toLowerCase() ||
-                uuid.toString().toLowerCase().replaceAll('-', '') ==
-                    BleConfig.serviceUuid.toLowerCase().replaceAll('-', ''),
+            (uuid) {
+              final u = uuid.toString().toLowerCase().replaceAll('-', '');
+              return u == BleConfig.serviceUuid.toLowerCase().replaceAll('-', '') ||
+                     u == BleConfig.alternateServiceUuid.toLowerCase().replaceAll('-', '');
+            },
           );
 
-          // Filter by SwaasAI device name, prefix or advertised service UUID
-          if (matchesPrefix || matchesService || devName.isNotEmpty) {
+          final isSwasthAiDevice = isKnownMac || matchesPrefix || matchesService;
+
+          // Only show devices that have a readable broadcast name or match SwasthAI / ESP32
+          if (isSwasthAiDevice || (rawName.trim().isNotEmpty && rawName.length > 2)) {
+            final displayName = isKnownMac
+                ? (rawName.isNotEmpty ? rawName : 'SWASTHAI-ESP32')
+                : rawName;
+
             final model = BleDeviceModel(
               id: r.device.remoteId.str,
-              name: devName.isNotEmpty ? devName : BleConfig.targetDeviceName,
+              name: displayName,
               rssi: r.rssi,
               platformDevice: r.device,
             );
 
             final existingIndex = _discoveredDevices.indexWhere((d) => d.id == model.id);
             if (existingIndex >= 0) {
-              _discoveredDevices[existingIndex] = model;
+              if (rawName.isNotEmpty) {
+                _discoveredDevices[existingIndex] = model;
+              }
             } else {
-              _discoveredDevices.add(model);
+              if (isSwasthAiDevice) {
+                _discoveredDevices.insert(0, model);
+              } else {
+                _discoveredDevices.add(model);
+              }
             }
             notifyListeners();
           }
         }
       });
 
-      await FlutterBluePlus.startScan(timeout: timeout);
+      await FlutterBluePlus.startScan(
+        timeout: timeout,
+        androidUsesFineLocation: true,
+      );
       await FlutterBluePlus.isScanning.where((val) => val == false).first;
       if (_connectionState == BleConnectionState.scanning) {
         _setConnectionState(BleConnectionState.disconnected);
@@ -308,14 +373,44 @@ class RealBleService extends ChangeNotifier implements BleService {
 
     try {
       await stopScan();
+      await Future.delayed(const Duration(milliseconds: 300));
       _setConnectionState(BleConnectionState.connecting);
       _connectedDevice = targetBleDevice;
       _connectedDeviceName = targetBleDevice.platformName.isNotEmpty
           ? targetBleDevice.platformName
           : BleConfig.targetDeviceName;
 
-      // Connect with configured timeout
-      await targetBleDevice.connect(timeout: BleConfig.connectTimeout, autoConnect: false);
+      // Clean disconnect stale handles & clear Android GATT cache if any
+      try {
+        await targetBleDevice.disconnect();
+        await targetBleDevice.clearGattCache();
+        await Future.delayed(const Duration(milliseconds: 300));
+      } catch (_) {}
+
+      // Connect with configured timeout & retry for Android Error 133
+      bool connected = false;
+      int attempts = 0;
+      while (!connected && attempts < 2) {
+        attempts++;
+        try {
+          await targetBleDevice.connect(
+            timeout: BleConfig.connectTimeout,
+            autoConnect: false,
+            mtu: null,
+          );
+          connected = true;
+        } catch (connErr) {
+          debugPrint('[RealBleService] Connect attempt $attempts error: $connErr');
+          if (attempts < 2) {
+            try {
+              await targetBleDevice.clearGattCache();
+            } catch (_) {}
+            await Future.delayed(const Duration(milliseconds: 800));
+          } else {
+            rethrow;
+          }
+        }
+      }
 
       _setConnectionState(BleConnectionState.connected);
 
@@ -352,7 +447,7 @@ class RealBleService extends ChangeNotifier implements BleService {
       debugPrint('[RealBleService] Connection error: $e');
       _setConnectionState(
         BleConnectionState.error,
-        error: 'Failed to connect to SwasthAI device. Make sure the device is powered on.',
+        error: 'Failed to connect to SwasthAI device. If error persists, toggle Bluetooth OFF/ON or unpair the device in phone settings.',
       );
     }
   }
@@ -434,7 +529,7 @@ class RealBleService extends ChangeNotifier implements BleService {
       }
     }
 
-    return _screeningResultCharacteristic != null;
+    return _screeningResultCharacteristic != null || _characteristicSubscriptions.isNotEmpty;
   }
 
   @override
@@ -1024,11 +1119,100 @@ class MockBleService extends ChangeNotifier implements BleService {
   }
 }
 
-/// Unified BLE Service Manager that dynamically switches between RealBleService and MockBleService.
+/// Adapter allowing WifiDeviceService to satisfy the BleService contract seamlessly.
+class WifiBleAdapter extends ChangeNotifier implements BleService {
+  final WifiDeviceService wifiService;
+
+  WifiBleAdapter(this.wifiService) {
+    wifiService.addListener(notifyListeners);
+  }
+
+  @override
+  BleConnectionState get connectionState {
+    switch (wifiService.state) {
+      case WifiConnectionState.connected:
+        return BleConnectionState.ready;
+      case WifiConnectionState.connecting:
+        return BleConnectionState.connecting;
+      case WifiConnectionState.error:
+        return BleConnectionState.error;
+      case WifiConnectionState.disconnected:
+        return BleConnectionState.disconnected;
+    }
+  }
+
+  @override
+  Stream<BleConnectionState> get connectionStateStream => wifiService.connectionStateStream;
+  @override
+  Stream<SensorReading> get sensorReadingStream => wifiService.sensorReadingStream;
+  @override
+  Stream<VitalsReading> get vitalsStream => wifiService.vitalsStream;
+  @override
+  Stream<SpirometryPoint> get spirometryStream => wifiService.spirometryStream;
+  @override
+  Stream<AcousticReading> get acousticStream => wifiService.acousticStream;
+  @override
+  Stream<SwaasAiBleResult> get screeningResultStream => wifiService.screeningResultStream;
+
+  @override
+  SwaasAiBleResult? get latestScreeningResult => wifiService.latestScreeningResult;
+  @override
+  String? get lastRawPacket => wifiService.lastRawPacket;
+  @override
+  DateTime? get lastPacketTime => wifiService.lastPacketTime;
+
+  @override
+  VitalsReading get latestVitals => wifiService.latestVitals;
+  @override
+  AcousticReading get latestAcoustic => wifiService.latestAcoustic;
+  @override
+  List<SpirometryPoint> get currentBlowPoints => wifiService.currentBlowPoints;
+  @override
+  int get sessionCoughCount => wifiService.sessionCoughCount;
+  @override
+  bool get isSimulatorMode => false;
+  @override
+  bool get isBlowing => wifiService.isBlowing;
+  @override
+  String? get connectedDeviceName => 'ESP32 Wi-Fi (${wifiService.targetIp})';
+  @override
+  String? get errorMessage => wifiService.errorMessage;
+  @override
+  List<BleDeviceModel> get discoveredDevices => const [];
+
+  @override
+  Future<void> startScan({Duration timeout = BleConfig.scanTimeout}) async {}
+  @override
+  Future<void> stopScan() async {}
+  @override
+  Future<void> connectToDevice(dynamic device) async {}
+  @override
+  Future<void> disconnect() async => wifiService.disconnect();
+  @override
+  Future<SwaasAiBleResult?> readLatestResult() async => wifiService.latestScreeningResult;
+  @override
+  void emitMockScreeningResult({String? rawPacket}) {}
+  @override
+  void toggleSimulatorMode(bool enable) {}
+  @override
+  void resetSessionCounters() => wifiService.resetSessionCounters();
+  @override
+  SpirometrySummary computeSpirometrySummary() => wifiService.computeSpirometrySummary();
+  @override
+  void triggerSimulatorBlow({bool simulateObstruction = false}) {}
+  @override
+  void startSimulatedSpirometryBlow({bool simulateObstruction = false}) {}
+  @override
+  void triggerSimulatedCough() {}
+}
+
+/// Unified Device Connection Manager supporting BLE, Wi-Fi, and Simulator.
 class AppBleService extends ChangeNotifier implements BleService {
   late RealBleService _realBleService;
   late MockBleService _mockBleService;
-  bool _isSimulatorMode = true;
+  late WifiDeviceService _wifiService;
+  late WifiBleAdapter _wifiAdapter;
+  HardwareTransportMode _transportMode = HardwareTransportMode.ble;
 
   final _connectionStateController = StreamController<BleConnectionState>.broadcast();
   final _sensorReadingController = StreamController<SensorReading>.broadcast();
@@ -1040,17 +1224,33 @@ class AppBleService extends ChangeNotifier implements BleService {
   final List<StreamSubscription> _delegatedSubs = [];
 
   AppBleService({bool initialSimulatorMode = true}) {
-    _isSimulatorMode = initialSimulatorMode;
+    _transportMode = initialSimulatorMode ? HardwareTransportMode.simulator : HardwareTransportMode.ble;
     _realBleService = RealBleService();
     _mockBleService = MockBleService(startConnected: initialSimulatorMode);
+    _wifiService = WifiDeviceService();
+    _wifiAdapter = WifiBleAdapter(_wifiService);
 
     _realBleService.addListener(_onActiveServiceChanged);
     _mockBleService.addListener(_onActiveServiceChanged);
+    _wifiAdapter.addListener(_onActiveServiceChanged);
 
     _bindActiveStreams();
   }
 
-  BleService get _activeService => _isSimulatorMode ? _mockBleService : _realBleService;
+  HardwareTransportMode get transportMode => _transportMode;
+  WifiDeviceService get wifiService => _wifiService;
+  bool get isWifiMode => _transportMode == HardwareTransportMode.wifi;
+
+  BleService get _activeService {
+    switch (_transportMode) {
+      case HardwareTransportMode.wifi:
+        return _wifiAdapter;
+      case HardwareTransportMode.simulator:
+        return _mockBleService;
+      case HardwareTransportMode.ble:
+        return _realBleService;
+    }
+  }
 
   void _bindActiveStreams() {
     for (final s in _delegatedSubs) {
@@ -1070,8 +1270,38 @@ class AppBleService extends ChangeNotifier implements BleService {
     notifyListeners();
   }
 
+  /// Switch transport to Wi-Fi mode
+  void switchToWifiMode() {
+    if (_transportMode == HardwareTransportMode.wifi) return;
+    _realBleService.disconnect();
+    _mockBleService.disconnect();
+    _transportMode = HardwareTransportMode.wifi;
+    _bindActiveStreams();
+    notifyListeners();
+  }
+
+  /// Switch transport to Wi-Fi mode and connect to target IP
+  Future<bool> connectWifi({String ip = '192.168.4.1', int port = 80}) async {
+    _realBleService.disconnect();
+    _mockBleService.disconnect();
+    _transportMode = HardwareTransportMode.wifi;
+    _bindActiveStreams();
+    notifyListeners();
+    return await _wifiService.connect(ip: ip, port: port);
+  }
+
+  /// Switch transport to BLE mode
+  void switchToBleMode() {
+    if (_transportMode == HardwareTransportMode.ble) return;
+    _wifiService.disconnect();
+    _mockBleService.disconnect();
+    _transportMode = HardwareTransportMode.ble;
+    _bindActiveStreams();
+    notifyListeners();
+  }
+
   @override
-  bool get isSimulatorMode => _isSimulatorMode;
+  bool get isSimulatorMode => _transportMode == HardwareTransportMode.simulator;
 
   @override
   BleConnectionState get connectionState => _activeService.connectionState;
@@ -1147,13 +1377,15 @@ class AppBleService extends ChangeNotifier implements BleService {
 
   @override
   void toggleSimulatorMode(bool enable) {
-    if (_isSimulatorMode == enable) return;
-    _isSimulatorMode = enable;
-    if (_isSimulatorMode) {
+    if (enable) {
+      if (_transportMode == HardwareTransportMode.simulator) return;
       _realBleService.disconnect();
+      _wifiService.disconnect();
+      _transportMode = HardwareTransportMode.simulator;
       _mockBleService.startSimulator();
     } else {
       _mockBleService.disconnect();
+      _transportMode = HardwareTransportMode.ble;
       _realBleService.disconnect();
     }
     _bindActiveStreams();
@@ -1185,8 +1417,10 @@ class AppBleService extends ChangeNotifier implements BleService {
     _delegatedSubs.clear();
     _realBleService.removeListener(_onActiveServiceChanged);
     _mockBleService.removeListener(_onActiveServiceChanged);
+    _wifiAdapter.removeListener(_onActiveServiceChanged);
     _realBleService.dispose();
     _mockBleService.dispose();
+    _wifiService.dispose();
     _connectionStateController.close();
     _sensorReadingController.close();
     _vitalsController.close();
