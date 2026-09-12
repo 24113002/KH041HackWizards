@@ -1,0 +1,46 @@
+# Python Bytecode & Environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+.env
+
+# Legacy root backend working folder
+backend/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local SQLite Databases & Logs
+*.db
+*.sqlite
+*.sqlite3
+*.db-wal
+*.db-shm
+*.log
+!data/.gitkeep
+!src/backend/data/.gitkeep
+
+# Flutter / Dart Build Artifacts
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+android/.gradle/
+android/app/build/
+ios/Pods/
+ios/.symlinks/
+*.lock.bk
+
+# Operating System & IDE
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/

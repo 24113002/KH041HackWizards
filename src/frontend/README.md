@@ -1,0 +1,164 @@
+# SWASTHAI (स्वस्थ AI)
+### Point-of-Care Cardiopulmonary & Respiratory Health Screening System
+
+[![Flutter](https://img.shields.io/badge/Flutter-3.44+-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
+[![ESP32](https://img.shields.io/badge/ESP32-Arduino-E7352C?logo=espressif&logoColor=white)](https://espressif.com)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS%20%7C%20Windows-blue)](https://flutter.dev)
+[![Offline First](https://img.shields.io/badge/Database-SQLite%20Offline-003B57?logo=sqlite&logoColor=white)](https://sqlite.org)
+
+SWASTHAI is a point-of-care cardiopulmonary and respiratory screening solution uniting an **ESP32 hardware device** (equipped with a MAX30102 pulse oximeter, differential pressure/airflow mouthpiece sensor for spirometry, acoustic microphone for auscultation/cough analysis, 7-pin OLED, and push button) with a cross-platform **Flutter mobile application**.
+
+The system operates **100% offline-first**, making it suitable for rural health clinics, remote field screening, point-of-care triage, and home monitoring.
+
+---
+
+## 🏛️ System Architecture
+
+```
+             ┌──────────────────────────────────────────────┐
+             │               SWASTHAI SYSTEM                │
+             └──────────────────────┬───────────────────────┘
+                                    │
+          ┌─────────────────────────┴─────────────────────────┐
+          │                                                   │
+┌─────────▼─────────┐                               ┌─────────▼─────────┐
+│    Flutter App    │                               │   ESP32 Device    │
+│  (Offline-First)  │                               │    (Handheld)     │
+└─────────┬─────────┘                               └─────────┬─────────┘
+          │                                                   │
+          ├── BLE Service (Real BLE + Simulator) ◄────────────┼── MAX30102 (HR/SpO2/PPG)
+          │                                                   ├── Pressure (Airflow Tube)
+          ├── SQLite Database (sqflite FFI)                   ├── Mic Module (Cough/Audio)
+          │   ├── Patients Table                              ├── 7-Pin SPI OLED (SSD1306)
+          │   └── Screening Sessions Table                    └── Push Button (Blow Trigger)
+          │
+          ├── Clinical Questionnaire Module
+          │   ├── mMRC Dyspnea Scale (Grades 0–4)
+          │   ├── Symptoms: Cough, Sputum, Wheeze, Chest Pain
+          │   ├── Exposure: Tobacco Pack-Years, Biomass Smoke
+          │   └── Comorbidities: Asthma, COPD, HTN, Diabetes, CAD
+          │
+          ├── Offline Multi-Factor Risk Assessment Engine
+          │   ├── Reference Equations (Predicted FEV1, FVC, PEF)
+          │   ├── Vitals: SpO2 Hypoxemia & Arrhythmia/Tachycardia Rules
+          │   ├── Spirometry: FEV1/FVC (<0.70 GOLD criterion) & PEF
+          │   ├── Acoustics: Cough Frequency & Wheeze Acoustic Energy
+          │   └── Symptoms: Weighted Clinical Burden Score
+          │
+          ▼
+   Screening Result
+   - Color-coded Risk Level (Low, Moderate, High, Critical)
+   - Clinical Pattern (Normal, Obstructive Airway, Acute Hypoxemia, etc.)
+   - Dynamic Flow-Time & PPG Waveforms
+   - Actionable Clinical Next Steps & Report Sharing
+```
+
+---
+
+## 🚀 Key Features
+
+- **Multi-Modal Physiological Sensing**:
+  - **MAX30102**: Real-time photoplethysmography (PPG) waveform, SpO2 blood oxygen saturation, and pulse rate.
+  - **Differential Pressure Airflow Sensor**: Guided forced exhalation spirometry through a mouthpiece and tube, calculating **FEV1**, **FVC**, **FEV1/FVC ratio**, and **Peak Expiratory Flow (PEF)** with reference to predicted values calculated via Knudson & GLI equations.
+  - **Acoustic Microphone**: Real-time sound level RMS monitoring, automated cough event counting, and acoustic wheeze detection.
+- **Dual-Mode BLE Engine**:
+  - Real BLE GATT scanner and notification subscriber (`SWASTHAI-ESP32`).
+  - **Interactive Hardware Simulator**: Built-in physiological simulator streaming realistic PPG waves, spirometry curves (normal vs. obstructive), and cough events for instant development and testing without physical hardware.
+- **Offline SQLite Relational Database**:
+  - Encrypted/local offline patient database with complete demographics, vital signs history, and past screening sessions.
+- **Clinical Questionnaire**:
+  - mMRC Dyspnea Scale (Grades 0–4).
+  - Cough frequency & sputum characteristics.
+  - Wheeze and chest discomfort.
+  - Tobacco smoking pack-years slider and biomass/indoor fuel smoke exposure.
+  - Pre-existing cardiopulmonary comorbidities.
+- **Offline Clinical Risk Assessment Engine**:
+  - Evidence-based scoring adhering to **GOLD** guidelines (FEV1/FVC < 0.70 airflow obstruction), ATS/ERS criteria, and WHO hypoxia triage thresholds.
+  - Categorizes into **Low**, **Moderate**, **High**, or **Critical/Emergency** tiers.
+  - Identifies clinical patterns: *Normal*, *Obstructive Airway Pattern (Asthma/COPD)*, *Possible Restrictive Defect*, *Acute Hypoxemic Respiratory Distress*, *Cardiovascular Strain*, or *Mixed Profile*.
+  - Actionable medical triage recommendations & 1-tap clinical summary report sharing.
+
+---
+
+## 📱 Getting Started with the Flutter App
+
+### Prerequisites
+- Flutter SDK (v3.19+ or higher)
+- Dart SDK (v3.0+)
+- Android Studio / VS Code / Antigravity IDE
+
+### Installation & Run
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/24113002/SwasthAI.git
+   cd SwasthAI
+   ```
+
+2. Install dependencies:
+   ```bash
+   flutter pub get
+   ```
+
+3. Run static analysis:
+   ```bash
+   dart analyze
+   ```
+
+4. Run the unit test suite:
+   ```bash
+   flutter test
+   ```
+
+5. Launch the application:
+   ```bash
+   flutter run
+   ```
+
+---
+
+## 🔌 ESP32 Firmware & Hardware Wiring
+
+The complete, ready-to-flash Arduino firmware is located in [`esp32_firmware/swasthai_esp32_firmware.ino`](esp32_firmware/swasthai_esp32_firmware.ino).
+
+### Pinout Mapping
+
+| Component | Pin / Signal | ESP32 GPIO |
+|---|---|---|
+| **7-Pin SPI OLED (SSD1306)** | D0 (CLK) | GPIO 18 |
+| | D1 (MOSI) | GPIO 23 |
+| | RES (Reset) | GPIO 17 |
+| | DC (Data/Cmd) | GPIO 16 |
+| | CS (Chip Select) | GPIO 5 |
+| | VCC / GND | 3.3V / GND |
+| **MAX30102** | SDA | GPIO 21 |
+| | SCL | GPIO 22 |
+| | VIN / GND | 3.3V / GND |
+| **Airflow Pressure Sensor** | Vout (Analog) | GPIO 34 (ADC1 CH6) |
+| **Microphone Module** | OUT (Analog) | GPIO 35 (ADC1 CH7) |
+| **Tactile Push Button** | Signal (Active LOW) | GPIO 19 (`INPUT_PULLUP`) |
+
+For comprehensive hardware wiring, tube connection diagrams, and calibration details, see [`esp32_firmware/README.md`](esp32_firmware/README.md).
+
+---
+
+## 🧪 Testing & Validation
+
+The project includes an automated test suite verifying clinical decision rules, predicted spirometry equations, and SQLite database operations:
+
+```bash
+flutter test
+```
+
+### Verified Test Cases:
+- ✅ Predicted lung capacity formulas (FEV1, FVC, PEF) based on age, sex, and height.
+- ✅ Normal vitals and spirometry produce Low Risk / Normal Pattern.
+- ✅ Reduced FEV1/FVC ratio (< 0.70) triggers Obstructive Airway Disease pattern.
+- ✅ Severe hypoxemia (SpO2 < 88%) triggers critical emergency flag.
+- ✅ SQLite database CRUD and statistical aggregation.
+
+---
+
+## 📄 License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
